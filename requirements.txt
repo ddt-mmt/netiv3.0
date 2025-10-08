@@ -15,3 +15,6 @@ wheel==0.43.0
 xhtml2pdf==0.2.15
 zipp==3.19.2
 beautifulsoup4==4.12.3
+Flask
+whois
+requests
