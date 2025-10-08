@@ -1,0 +1,84 @@
+### **Rencana Proyek Pengembangan `netiV3`**
+
+**Tujuan:** Mengintegrasikan 5 set fitur baru (4 fitur utama + 1 fitur efisiensi) untuk meningkatkan kemampuan dan efisiensi aplikasi `netiV3`.
+
+**Prinsip Panduan:**
+1.  **Stabilitas:** Setiap fitur baru akan dikembangkan dan diuji secara terisolasi untuk memastikan tidak ada regresi pada fungsionalitas yang ada.
+2.  **Bertahap:** Fitur akan dirilis dalam beberapa fase, dimulai dari perubahan yang paling fundamental dan memberikan dampak efisiensi terbesar.
+3.  **Konsistensi UI:** Desain antarmuka untuk fitur baru akan mengikuti pola dan gaya yang sudah ada agar tetap intuitif.
+
+---
+
+### **Fase 0: Manajemen Sumber Daya dan Kontrol Tugas**
+
+**Fokus Utama:** Memastikan aplikasi stabil, responsif, dan dapat dikontrol di bawah beban kerja berat, serta memberikan pengalaman yang efisien dan informatif untuk pemindaian jangka panjang, sebelum menambahkan fitur-fitur baru.
+
+**Fitur yang Dikerjakan:**
+1.  **Implementasi Sistem Antrian Tugas (Task Queue):** Membuat "pengelola" yang membatasi jumlah tugas berat (misal: 3-5) yang bisa berjalan bersamaan untuk mencegah server kehabisan sumber daya.
+    *   **Pembatasan Ukuran Antrian:** Menetapkan batas maksimum jumlah permintaan yang dapat berada dalam antrian. Jika antrian penuh, permintaan baru akan ditolak dengan pesan informatif.
+    *   **Pesan Informasi Pengguna:** Memberikan umpan balik yang jelas kepada pengguna jika permintaan mereka tidak dapat segera diproses karena antrian penuh, termasuk jumlah item dalam antrian.
+2.  **Implementasi Mekanisme Timeout (Watchdog):** Membuat sistem "anjing penjaga" yang secara otomatis membatalkan tugas yang berjalan melebihi batas waktu maksimum yang ditentukan, untuk mencegah antrian macet.
+3.  **Implementasi Pembatalan Massal (Bulk Cancellation):** Menambahkan tombol "Batalkan Semua" di antarmuka dan endpoint di backend untuk menghentikan semua tugas yang sedang berjalan atau menunggu di antrian.
+4.  **Manajemen Pemindaian Jangka Panjang:**
+    *   **Pelaporan Status yang Lebih Detail:** Menampilkan progres pemindaian yang lebih granular (misal: persentase selesai, tahap pemindaian) di UI.
+    *   **Notifikasi Otomatis:** Mengirim notifikasi (misal: email) setelah pemindaian jangka panjang selesai atau gagal.
+    *   **Estimasi Waktu dan Peringatan:** Memberikan perkiraan durasi pemindaian dan peringatan di UI sebelum memulai tugas yang memakan waktu lama.
+    *   **Antarmuka Manajemen Tugas Khusus:** Menyediakan tampilan khusus di UI untuk memantau dan mengelola pemindaian jangka panjang.
+5.  **Verifikasi Konfigurasi Gunicorn:** Memastikan konfigurasi Gunicorn sudah optimal (pengguna telah mengonfirmasi penggunaan 9 worker, langkah ini hanya untuk verifikasi).
+
+**Alasan:** Fase ini adalah fondasi krusial untuk keamanan, stabilitas, efisiensi, dan pengalaman pengguna yang lebih baik. Tanpa ini, penambahan fitur *bulk scanning* berisiko membuat aplikasi tidak stabil dan kurang informatif.
+
+---
+
+### **Fase 1: Fondasi Efisiensi (Bulk Target)**
+
+**Fokus Utama:** Membangun kemampuan dasar untuk melakukan pemindaian terhadap banyak target sekaligus, yang akan menjadi fondasi bagi hampir semua fitur lainnya.
+
+**Fitur yang Dikerjakan:**
+*   **Implementasi Fitur "Bulk Target":**
+    1.  Ubah input target dari `input` menjadi `textarea` di halaman-halaman yang relevan.
+    2.  Modifikasi backend untuk dapat memproses daftar target dan membuat *task* terpisah untuk setiap target yang dikelola oleh sistem antrian dari Fase 0.
+    3.  **Pilot Project:** Terapkan fungsionalitas ini terlebih dahulu pada semua alat di halaman **`network_analysis.html`** (Ping, Nmap, dll.).
+
+**Alasan:** Perubahan ini adalah yang paling fundamental dan memberikan peningkatan efisiensi langsung kepada pengguna. Menyelesaikannya di awal akan mempermudah penambahan alat-alat baru di fase berikutnya.
+
+---
+
+### **Fase 2: Penambahan Alat Analisis Web & Domain**
+
+**Fokus Utama:** Memperkaya perangkat analisis web dengan alat-alat baru yang relevan dengan OWASP Top 10 dan memperluas fungsionalitas *bulk target*.
+
+**Fitur yang Dikerjakan:**
+1.  **Integrasi SQLMap:** Tambahkan tab/fitur "SQL Injection Scanner" di dalam halaman `web_domain_analysis.html`.
+2.  **Integrasi Secrets Scanner:** Tambahkan tab/fitur "Secrets Scanner" di dalam halaman `web_domain_analysis.html`.
+3.  **Perluasan Bulk Target:** Terapkan fungsionalitas *bulk target* dari Fase 1 ke semua alat di halaman `web_domain_analysis.html` (Nikto, XXE, Subdomain, dll., termasuk SQLMap dan Secrets Scanner yang baru).
+
+**Alasan:** Mengelompokkan semua pekerjaan yang terkait dengan halaman `web_domain_analysis.html` dalam satu fase membuat pengembangan lebih efisien.
+
+---
+
+### **Fase 3: Penambahan Kategori Pengujian Baru**
+
+**Fokus Utama:** Memperkenalkan dua kategori fungsionalitas yang sepenuhnya baru untuk memperluas cakupan pengujian `netiV3`.
+
+**Fitur yang Dikerjakan:**
+1.  **Buat Halaman "API Security":**
+    *   Buat halaman `api_security.html` dan tambahkan navigasinya di menu utama.
+    *   Implementasikan fungsi dasar pemindai keamanan API.
+2.  **Buat Halaman "AI Utilities":**
+    *   Buat halaman `ai_utilities.html` untuk fitur **AI-Powered Payload Generator**.
+    *   Tambahkan navigasinya di menu utama.
+
+**Alasan:** Fitur-fitur ini bersifat mandiri dan tidak memiliki banyak ketergantungan pada fitur lain, sehingga dapat dikerjakan setelah fondasi utama selesai.
+
+---
+
+### **Fase 4: Penyempurnaan Alur Kerja AI dan Finalisasi**
+
+**Fokus Utama:** Menyempurnakan pengalaman pengguna terkait fitur AI dan melakukan pengujian akhir.
+
+**Fitur yang Dikerjakan:**
+1.  **Implementasi AI-Assisted Reporting:**
+    *   Modifikasi halaman-halaman hasil untuk menambahkan tombol **"Buat Ringkasan Eksekutif"** secara dinamis setelah analisis teknis AI selesai.
+2.  **Pengujian Menyeluruh:** Lakukan pengujian regresi pada semua fungsi lama dan pengujian fungsional pada semua fitur baru untuk memastikan semuanya bekerja secara harmonis.
+3.  **Dokumentasi:** Perbarui file `README.md` dan dokumentasi lainnya untuk mencerminkan semua fitur baru yang telah ditambahkan.

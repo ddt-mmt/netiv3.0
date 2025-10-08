@@ -1,0 +1,89 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.api_security_title | default("API Security Analysis") }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-shield-alt"></i> {{ lang.api_security_title | default("API Security Analysis") }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
+                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}">
+            </div>
+            <hr>
+
+            <!-- Nav Tabs -->
+            <ul class="nav nav-tabs" id="apiSecurityTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="scanner-tab" data-toggle="tab" href="#scanner" role="tab" aria-controls="scanner" aria-selected="true">{{ lang.api_scanner_tab | default("API Scanner") }}</a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content pt-3" id="apiSecurityTabContent">
+                <!-- Scanner Tab -->
+                <div class="tab-pane fade show active" id="scanner" role="tabpanel">
+                    <p class="card-text">{{ lang.api_scanner_description | default("Enter the base URL of the API to scan for common vulnerabilities.") }}</p>
+                    <form class="analysisForm" data-url="/run_api_scan">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.target_api_base_url_label | default("Target API Base URL") }}</label>
+                            <input type="text" class="form-control" name="target" placeholder="e.g., https://api.example.com/v1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.run_analysis_button | default("Run Analysis") }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-area" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
+            <div id="task-controls" style="display: none;">
+                <span id="task-timer" class="me-3">00:00</span>
+                <button id="cancel-button" class="btn btn-danger btn-sm">
+                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
+                <div id="analysis-in-progress" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <strong>{{ lang.processing_message }}</strong>
+                        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div id="ai-output-area">
+                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
+                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Scripts will be added later to handle form submission and results
+    // For now, this is a static template.
+    // Note: A generic script similar to network_analysis.html will be needed.
+</script>
+{% endblock %}

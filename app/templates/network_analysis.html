@@ -1,0 +1,473 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.net_analysis_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-network-wired"></i> {{ lang.net_analysis_title }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
+                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}">
+            </div>
+            <hr>
+
+            <!-- Bootstrap 4 Nav Tabs -->
+            <ul class="nav nav-tabs" id="netAnalysisTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="ping-tab" data-toggle="tab" href="#ping" role="tab" aria-controls="ping" aria-selected="true">{{ lang.ping_tab }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="traceroute-tab" data-toggle="tab" href="#traceroute" role="tab" aria-controls="traceroute" aria-selected="false">Traceroute</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="nslookup-tab" data-toggle="tab" href="#nslookup" role="tab" aria-controls="nslookup" aria-selected="false">{{ lang.nslookup_tab }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link font-weight-bold" id="nmap-tab" data-toggle="tab" href="#nmap" role="tab" aria-controls="nmap" aria-selected="false">{{ lang.nmap_tab }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="dns-spoof-tab" data-toggle="tab" href="#dns-spoof" role="tab" aria-controls="dns-spoof" aria-selected="false">{{ lang.dns_spoof_tab }}</a>
+                </li>
+                {% for tool in custom_tools %}
+                <li class="nav-item">
+                    <a class="nav-link" id="{{ tool.id }}-tab" data-toggle="tab" href="#{{ tool.id }}" role="tab">{{ tool.tab_name[lang_code] }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content pt-3" id="netAnalysisTabContent">
+                <!-- Ping Tab -->
+                <div class="tab-pane fade show active" id="ping" role="tabpanel">
+                    <p class="card-text">{{ lang.ping_description }}</p>
+                    <form class="analysisForm" data-url="/run_ping">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.target_ip_domain_label }}</label>
+                            <input type="text" class="form-control" name="target" placeholder="cth: google.com atau 8.8.8.8" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.run_analysis_button }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <!-- Other tabs follow the same structure... -->
+                <div class="tab-pane fade" id="traceroute" role="tabpanel">
+                    <p class="card-text">{{ lang.traceroute_description }}</p>
+                    <form class="analysisForm" data-url="/run_traceroute">
+                         <div class="mb-3">
+                            <label class="form-label">{{ lang.target_ip_domain_label }}</label>
+                            <input type="text" class="form-control" name="target" placeholder="cth: google.com atau 8.8.8.8" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.run_analysis_button }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="nslookup" role="tabpanel">
+                    <p class="card-text">{{ lang.nslookup_description }}</p>
+                    <form class="analysisForm" data-url="/run_nslookup">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.target_domain_label }}</label>
+                            <input type="text" class="form-control" name="target" placeholder="{{ lang.target_domain_placeholder }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.run_analysis_button }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="nmap" role="tabpanel">
+                    <p class="card-text">{{ lang.nmap_description }}</p>
+                    <form id="nmapForm" class="analysisForm" data-url="/run_nmap">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.target_ip_domain_subnet_label }}</label>
+                            <input type="text" class="form-control" name="target" placeholder="cth: google.com, 192.168.1.1, 192.168.1.0/24" required>
+                        </div>
+                        <hr>
+                        <label class="form-label">{{ lang.scan_method_label }}</label>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="scan_type" value="ping_scan" checked><label class="form-check-label"><strong>{{ lang.ping_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.ping_scan_description }}</small></label></div>
+                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="quick_scan"><label class="form-check-label"><strong>{{ lang.quick_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.quick_scan_description }}</small></label></div>
+                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="intense_scan"><label class="form-check-label"><strong>{{ lang.intense_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.intense_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_intense_scan_warning }}</small></label></div>
+                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="udp_scan"><label class="form-check-label"><strong>{{ lang.udp_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.udp_scan_description }}</small></label></div>
+                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="vuln_scan"><label class="form-check-label"><strong>{{ lang.vuln_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.vuln_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_vuln_scan_warning }}</small></label></div>
+                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="ssh_audit"><label class="form-check-label"><strong>{{ lang.ssh_security_audit_title }}</strong><small class="form-text text-muted d-block">{{ lang.ssh_security_audit_description }}</small></label></div>
+                        <button type="submit" class="btn btn-danger w-100 mt-3">
+                            <span class="button-text">{{ lang.run_nmap_analysis_button }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="dns-spoof" role="tabpanel">
+                    <div class="alert alert-danger"><b>{{ lang.dns_spoof_warning_strong }}</b> {{ lang.dns_spoof_warning_text }}</div>
+                    <form id="dnsSpoofForm" class="analysisForm" data-url="/run_dns_spoof">
+                        <div class="mb-3"><label class="form-label">{{ lang.victim_ip_label }}</label><input type="text" class="form-control" name="victim_ip" placeholder="{{ lang.victim_ip_placeholder }}" required></div>
+                        <div class="mb-3"><label class="form-label">{{ lang.target_domain_label_short }}</label><input type="text" class="form-control" name="target_domain" placeholder="{{ lang.target_domain_placeholder_short }}" required></div>
+                        <div class="mb-3"><label class="form-label">{{ lang.fake_ip_label }}</label><input type="text" class="form-control" name="fake_ip" placeholder="{{ lang.fake_ip_placeholder }}" required></div>
+                        <button type="submit" class="btn btn-danger w-100">
+                            <span class="button-text">{{ lang.run_dns_spoof_test_button }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                {% for tool in custom_tools %}
+                <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
+                     <h5>{{ tool.tab_name[lang_code] }}</h5>
+                     <p>{{ tool.description[lang_code] }}</p>
+                     {% if tool.warning %}<div class="alert alert-warning mt-2"><b>{{ lang.tool_warning_label }}</b> {{ tool.warning[lang_code] }}</div>{% endif %}
+                     <form class="customAnalysisForm analysisForm" data-url="/run_custom_scan" data-tool-id="{{ tool.id }}">
+                        <div class="mb-3"><label class="form-label">{{ tool.input_label[lang_code] }}:</label><input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required></div>
+                        <button type="submit" class="btn btn-info w-100">
+                            <span class="button-text">{{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-area" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
+            <div id="task-controls" style="display: none;">
+                <span id="task-timer" class="me-3">00:00</span>
+                <button id="cancel-button" class="btn btn-danger btn-sm">
+                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
+                <div id="analysis-in-progress" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <strong>{{ lang.processing_message }}</strong>
+                        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div id="hacking-animation" style="display: none; font-family: 'monospace'; white-space: pre; overflow: auto; background-color: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 5px; height: 200px;"></div>
+                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div id="ai-output-area">
+                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
+                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const lang = {{ lang | tojson }};
+$(document).ready(function() {
+    // --- State Management ---
+    let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+    let currentAiTask = { intervalId: null, taskId: null, startTime: null }; // New state for AI task
+
+    function clearTaskState() {
+        if (currentTask.intervalId) clearInterval(currentTask.intervalId);
+        if (currentTask.submitButton) {
+            const button = $(currentTask.submitButton);
+            button.prop('disabled', false).find('.button-text').show();
+            button.find('.spinner-border').hide();
+        }
+        $('#task-controls').hide();
+        currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
+    }
+
+    function clearAiTaskState() {
+        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
+        currentAiTask = { intervalId: null, taskId: null, startTime: null };
+        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
+    }
+
+    function checkAndHideProgressBar() {
+        if (!currentTask.taskId && !currentAiTask.taskId) {
+            $('#analysis-in-progress').hide();
+        }
+    }
+
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const sec = (seconds % 60).toString().padStart(2, '0');
+        return `${min}:${sec}`;
+    }
+
+    // --- API Communication ---
+    function pollTaskStatus(taskId, analysisTitle, analysisMethod, analysisTarget) {
+        const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
+        $('#task-timer').text(formatTime(elapsedTime));
+        $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
+
+        $.ajax({
+            url: `/task/status/${taskId}`,
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'completed') {
+                    stopHackingAnimation();
+                    const resultText = response.result.stdout || JSON.stringify(response.result, null, 2);
+                    console.log("Main task completed. Triggering AI analysis.");
+                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget); // Trigger AI analysis after main task completes
+                    $('#output-display').hide(); // Hide raw output display on successful completion
+                    clearTaskState();
+                } else if (response.status === 'error') {
+                    stopHackingAnimation();
+                    const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
+                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
+                    clearTaskState();
+                } else if (response.status === 'cancelled') {
+                    stopHackingAnimation();
+                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
+                    clearTaskState();
+                }
+            },
+            error: function(xhr) {
+                stopHackingAnimation();
+                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`).show();
+                clearTaskState();
+            }
+        });
+    }
+
+    function pollAiTaskStatus() {
+        if (!currentAiTask.taskId) return;
+
+        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
+        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
+        console.log(`Polling AI task ${currentAiTask.taskId}. Elapsed: ${formatTime(elapsedTime)}`);
+
+        $.ajax({
+            url: `/task/status/${currentAiTask.taskId}`,
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'completed') {
+                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
+                    console.log("AI task completed.", response.result);
+                    clearAiTaskState();
+                } else if (response.status === 'error') {
+                    const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
+                    $('#ai-output').html(`<span class="text-danger">Error AI: ${errorText}</span>`);
+                    console.error("AI task error.", response.result);
+                    clearAiTaskState();
+                } else if (response.status === 'cancelled') {
+                    $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
+                    console.warn("AI task cancelled.");
+                    clearAiTaskState();
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status} ${xhr.responseText}</span>`);
+                console.error("Error polling AI status.", xhr);
+                clearAiTaskState();
+            }
+        });
+    }
+
+    function cancelCurrentTask() {
+        let tasksToCancel = [];
+        if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
+        if (currentAiTask.taskId) tasksToCancel.push(currentAiTask.taskId);
+
+        if (tasksToCancel.length > 0) {
+            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
+            $('#analysis-in-progress strong').text(lang.cancelling_message);
+
+            let cancelPromises = tasksToCancel.map(taskId => {
+                return $.ajax({
+                    url: `/task/cancel/${taskId}`,
+                    type: 'POST'
+                }).fail(function(xhr) {
+                    console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
+                    // Optionally update a specific error message for this task
+                });
+            });
+
+            $.when(...cancelPromises).always(function() {
+                // Polling functions will eventually pick up the 'cancelled' status
+                // and clear their respective states. The checkAndHideProgressBar will then hide the progress bar.
+                // Re-enable button and reset text after all attempts
+                $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+            });
+        } else {
+            alert(lang.no_running_tasks_to_cancel);
+        }
+    }
+
+    function runAiAnalysis(rawResults, analysisTitle, analysisMethod, analysisTarget) {
+        console.log("runAiAnalysis called.");
+        const apiKey = $('#apiKey').val();
+        console.log("DEBUG: API Key value read from input field: '" + apiKey + "'"); // Tambahan untuk Debug
+        if (!apiKey) {
+            $('#ai-output').html(`<span class="text-warning">${lang.ai_key_not_entered_ai_skipped}</span>`);
+            console.warn("AI Key is missing. Skipping AI analysis.");
+            return;
+        }
+        $('#ai-output').text(lang.starting_ai_analysis).show(); // Ensure AI output is visible and show initial message
+        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
+        $('#analysis-in-progress').show(); // Show progress bar for AI analysis
+        console.log("Starting AI analysis request.");
+
+        clearAiTaskState(); // Clear any previous AI task state
+
+        // Construct header and store it in currentAiTask
+        let header = `### ${analysisTitle || lang.ai_analysis_title}\n\n`;
+        header += `**Tanggal & Waktu:** ${new Date().toLocaleString()}\n`;
+        if (analysisMethod) header += `**Metode:** ${analysisMethod}\n`;
+        if (analysisTarget) header += `**Target:** ${analysisTarget}\n\n`;
+        header += `---\n\n`; // Separator
+        currentAiTask.header = header; // Store the constructed header
+
+        console.log("DEBUG: Preparing to make AJAX call to /analyze_results with key: '" + apiKey + "'"); // Tambahan untuk Debug
+        $.ajax({
+            url: '/analyze_results',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ api_key: apiKey, results: rawResults, language: '{{ lang_code }}' }),
+            success: function(response) {
+                console.log("AI analysis initial response:", response);
+                if (response.task_id) {
+                    currentAiTask.taskId = response.task_id;
+                    currentAiTask.startTime = Date.now();
+                    currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
+                    console.log(`AI task started with ID: ${response.task_id}`);
+                } else if (response.error) {
+                     $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`).show();
+                     checkAndHideProgressBar();
+                     console.error("Error starting AI task:", response.error);
+                } else {
+                    // Use the stored header
+                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
+                    checkAndHideProgressBar();
+                    console.warn("AI analysis response without task_id or error.", response);
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`).show();
+                checkAndHideProgressBar();
+                console.error("Failed to send AI analysis request.", xhr);
+            }
+        });
+    }
+
+    // --- Event Handlers for main analysis forms ---
+    let hackingAnimationInterval;
+
+    function startHackingAnimation() {
+        let frames = [
+            "[Scanning...]",
+            "[Scanning.. ]",
+            "[Scanning.  ]",
+            "[Scanning   ]"
+        ];
+        let i = 0;
+        $('#hacking-animation').show().text(frames[0]);
+        hackingAnimationInterval = setInterval(() => {
+            $('#hacking-animation').text(frames[i = (i + 1) % frames.length]);
+        }, 200);
+    }
+
+    function stopHackingAnimation() {
+        clearInterval(hackingAnimationInterval);
+        $('#hacking-animation').hide();
+    }
+
+    $('form.analysisForm').on('submit', function(event) {
+        console.log("Form analysisForm submitted.");
+        event.preventDefault();
+        if (currentTask.taskId) {
+            alert(lang.task_already_running_wait_cancel);
+            return;
+        }
+        const form = $(this);
+        const button = form.find('button[type="submit"]');
+        const url = form.data('url');
+        let data = {};
+        form.serializeArray().forEach(item => { data[item.name] = item.value; });
+        if (form.hasClass('customAnalysisForm')) {
+            data['tool_id'] = form.data('tool-id');
+        }
+
+        // Capture analysis details
+        const activeTabId = $('#netAnalysisTab .nav-link.active').attr('id');
+        let analysisMethod = $('#' + activeTabId).text().trim();
+        if (form.hasClass('customAnalysisForm')) {
+            analysisMethod = form.find('button[type="submit"]').text().replace('Run ', '').trim();
+        }
+        const analysisTarget = data.target || data.target_domain || data.victim_ip; // Handle different target names
+
+        currentTask.submitButton = button;
+        currentTask.analysisTitle = "Net Analysis";
+        currentTask.analysisMethod = analysisMethod;
+        currentTask.analysisTarget = analysisTarget;
+
+        button.prop('disabled', true).find('.button-text').hide();
+        button.find('.spinner-border').show();
+        $('#analysis-in-progress').show(); // Show loading animation
+        $('#analysis-in-progress strong').text(lang.starting_task);
+        $('#output-display').hide(); // Hide raw output display
+        startHackingAnimation(); // Start hacking animation
+        $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
+        $('#task-controls').show(); // Show task controls immediately
+        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel'); // Enable cancel button immediately
+        console.log("Main analysis form submitted.", data);
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                console.log("Main task initial response:", response);
+                if (response.task_id) {
+                    currentTask.taskId = response.task_id;
+                    currentTask.startTime = Date.now();
+                    $('#task-controls').show();
+                    $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+                    currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, currentTask.analysisMethod, currentTask.analysisTarget), 2000);
+                    console.log(`Main task started with ID: ${response.task_id}`);
+                } else {
+                    stopHackingAnimation();
+                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
+                    console.error("Error starting main task:", response);
+                    clearTaskState();
+                }
+            },
+            error: function(xhr) {
+                stopHackingAnimation();
+                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`).show();
+                console.error("Failed to send main task request.", xhr);
+                clearTaskState();
+            }
+        });
+    });
+
+    $('#cancel-button').on('click', cancelCurrentTask);
+
+    // Bootstrap 4 tab activation
+    var hash = window.location.hash;
+    if (hash) {
+        $('#netAnalysisTab a[href="' + hash + '"]').tab('show');
+    }
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        window.location.hash = e.target.hash;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,495 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.idor_test_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-key"></i> {{ lang.idor_test_title }}</h2>
+        <div>
+            <a href="/download_tutorial" class="btn btn-success btn-sm">
+                <i class="fas fa-download"></i> Download Tutorial (.txt)
+            </a>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-toggle="collapse" data-target="#collapseHowTo" aria-expanded="false" aria-controls="collapseHowTo">
+                <i class="fas fa-question-circle"></i> {{ lang.idor_how_to_title | default('Bagaimana Cara Menggunakannya?') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="collapse mb-4" id="collapseHowTo">
+        <div class="card card-body bg-light">
+            <h4>Tahap 1: Persiapan (di Aplikasi Target)</h4>
+            <p>Anda perlu login sebagai dua pengguna berbeda di aplikasi yang ingin Anda uji: <strong>Pengguna A</strong> (penyerang) dan <strong>Pengguna B</strong> (korban).</p>
+            <ol>
+                <li><strong>Dapatkan Cookie Sesi Pengguna A:</strong> Buka <strong>Developer Tools</strong> (F12) -> tab <strong>Application/Storage</strong> -> Cookies, lalu salin seluruh nilai cookie sesi Anda.</li>
+                <li><strong>Identifikasi URL Target dan ID:</strong> Cari halaman yang menampilkan data spesifik Pengguna A (misal: halaman profil), catat URL-nya (misal: <code>https://target.com/profile.php?user_id=123</code>) dan ID milik Pengguna A (<code>123</code>).</li>
+                <li><strong>Dapatkan ID Pengguna B:</strong> Cari tahu ID milik Pengguna B (misal: <code>456</code>).</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="idorTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="discovery-tab" data-toggle="tab" href="#discovery" role="tab" aria-controls="discovery" aria-selected="true">1. Penemuan Endpoint</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="idor-test-tab" data-toggle="tab" href="#idor-test" role="tab" aria-controls="idor-test" aria-selected="false">2. Uji Coba IDOR</a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content pt-3" id="idorTabsContent">
+        <!-- Discovery Tab Pane -->
+        <div class="tab-pane fade show active" id="discovery" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Form Penemuan</h5>
+                            <form id="discovery-form">
+                                <div class="mb-3">
+                                    <label for="start-url" class="form-label">URL Awal untuk Crawl</label>
+                                    <input type="text" class="form-control" id="start-url" placeholder="https://example.com/dashboard" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="discovery-cookie" class="form-label">Cookie Sesi</label>
+                                    <textarea class="form-control" id="discovery-cookie" rows="3" placeholder="session=...; user_token=..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <span class="button-text">Mulai Penemuan</span>
+                                    <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header"><i class="fas fa-link"></i> Endpoint Ditemukan</div>
+                        <div class="card-body" id="discovery-results-container">
+                            <div class="text-center text-muted pt-5">
+                                <p><i class="fas fa-compass fa-2x"></i></p>
+                                <p>Hasil penemuan endpoint akan muncul di sini.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IDOR Test Tab Pane -->
+        <div class="tab-pane fade" id="idor-test" role="tabpanel">
+             <div class="row">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Form Uji Coba</h5>
+                            <form id="idor-form">
+                                <div class="mb-3">
+                                    <label for="target-url" class="form-label">{{ lang.idor_form_target_url }}</label>
+                                    <input type="text" class="form-control" id="target-url" placeholder="https://example.com/api/users?id=__ID__" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id-list" class="form-label">{{ lang.idor_form_id_list }}</label>
+                                    <textarea class="form-control" id="id-list" rows="3" placeholder="101, 102, 103, 205, 404"></textarea>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <label for="cookie-user-a" class="form-label">{{ lang.idor_form_cookie_a }}</label>
+                                    <textarea class="form-control" id="cookie-user-a" rows="2" placeholder="session=..." required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="id-user-a" class="form-label">{{ lang.idor_form_id_a }}</label>
+                                    <input type="text" class="form-control" id="id-user-a" placeholder="101" required>
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <span class="button-text">{{ lang.start_scan_button | default('Start Scan') }}</span>
+                                    <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header"><i class="fas fa-list"></i> {{ lang.results_title }}</div>
+                        <div class="card-body" id="idor-results-container">
+                            <div class="text-center text-muted pt-5">
+                                <p><i class="fas fa-clipboard-list fa-2x"></i></p>
+                                <p>{{ lang.results_placeholder }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analysis Results Area -->
+    <div id="results-area" class="mt-4" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">Hasil Analisis</h4>
+            <div id="task-controls" style="display: none;">
+                <span id="task-timer" class="me-3">00:00</span>
+                <button id="cancel-button" class="btn btn-danger btn-sm">
+                    <i class="fas fa-times-circle"></i> Cancel
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h5><i class="fas fa-file-alt"></i> Raw Scan Data</h5>
+                <pre id="output-display">Tidak ada data mentah untuk jenis analisis ini.</pre>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div id="analysis-in-progress" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <strong>Memproses...</strong>
+                        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div id="hacking-animation" style="display: none; font-family: 'monospace'; white-space: pre; overflow: auto; background-color: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 5px; height: 200px;"></div>
+                <div id="ai-output-area">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h4 class="mb-0"><i class="fas fa-robot"></i> Analisis AI</h4>
+                    </div>
+                    <pre id="ai-output">Menunggu hasil scan untuk dianalisis...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Generic Task Management --- 
+    const taskStates = new Map(); // Stores state for discovery and IDOR tasks
+    let currentAiTask = { intervalId: null, taskId: null, startTime: null }; // State for AI task
+
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const sec = (seconds % 60).toString().padStart(2, '0');
+        return `${min}:${sec}`;
+    }
+
+    function checkAndHideProgressBar() {
+        if (taskStates.size === 0 && !currentAiTask.taskId) {
+            $('#analysis-in-progress').hide();
+            $('#results-area').hide();
+            stopHackingAnimation();
+        }
+    }
+
+    function clearTaskState(taskName) {
+        const state = taskStates.get(taskName);
+        if (!state) return;
+
+        if (state.intervalId) clearInterval(state.intervalId);
+        if (state.submitButton) {
+            state.submitButton.disabled = false;
+            state.submitButton.querySelector('.button-text').style.display = 'inline';
+            state.submitButton.querySelector('.spinner-border').style.display = 'none';
+        }
+        // Only hide main task controls if no other tasks are running
+        if (taskStates.size === 1 && !currentAiTask.taskId) {
+            $('#task-controls').hide();
+            $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+        }
+        taskStates.delete(taskName);
+        checkAndHideProgressBar();
+    }
+
+    function clearAiTaskState() {
+        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
+        currentAiTask = { intervalId: null, taskId: null, startTime: null };
+        checkAndHideProgressBar();
+    }
+
+    let hackingAnimationInterval;
+
+    function startHackingAnimation() {
+        let frames = [
+            "[Scanning...]",
+            "[Scanning.. ]",
+            "[Scanning.  ]",
+            "[Scanning   ]"
+        ];
+        let i = 0;
+        $('#hacking-animation').show().text(frames[0]);
+        hackingAnimationInterval = setInterval(() => {
+            $('#hacking-animation').text(frames[i = (i + 1) % frames.length]);
+        }, 200);
+    }
+
+    function stopHackingAnimation() {
+        clearInterval(hackingAnimationInterval);
+        $('#hacking-animation').hide();
+    }
+
+    async function cancelTask(taskName) {
+        console.log(`Attempting to cancel task: ${taskName}`);
+        const state = taskStates.get(taskName);
+        if (!state || !state.taskId) {
+            console.warn(`Task ${taskName} not found or no taskId to cancel.`);
+            return;
+        }
+
+        $('#cancel-button').prop('disabled', true).text('Cancelling...');
+
+        try {
+            const response = await fetch(`/task/cancel/${state.taskId}`, { method: 'POST' });
+            const data = await response.json();
+            console.log(`Cancel response for ${taskName}:`, data);
+            // Polling will detect the 'cancelled' status and clean up.
+        } catch (error) {
+            // Display error in the main output area if available, or alert
+            $('#output-display').html(`<span class="text-danger">Failed to send cancel request: ${error.message}</span>`);
+            $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+            console.error(`Error sending cancel request for ${taskName}:`, error);
+        }
+    }
+
+    function pollTaskStatus(taskName) {
+        const state = taskStates.get(taskName);
+        if (!state) return;
+
+        const elapsedTime = Math.round((Date.now() - state.startTime) / 1000);
+        $('#task-timer').text(formatTime(elapsedTime));
+        $('#analysis-in-progress strong').text(`Memindai ${taskName}... (${formatTime(elapsedTime)})`);
+        console.log(`Polling main task ${taskName} (${state.taskId}). Elapsed: ${formatTime(elapsedTime)}`);
+
+        fetch(`/task/status/${state.taskId}`)
+            .then(res => res.json())
+            .then(response => {
+                console.log(`Status for main task ${taskName}:`, response);
+                if (response.status === 'completed') {
+                    state.renderFn(response.result);
+                    runAiAnalysis(JSON.stringify(response.result, null, 2)); // Trigger AI analysis
+                    clearTaskState(taskName);
+                } else if (response.status === 'error') {
+                    const errorText = response.result.stderr || response.result.message || 'An unknown error occurred.';
+                    state.container.innerHTML = `<div class="alert alert-danger">Error: ${errorText}</div>`;
+                    clearTaskState(taskName);
+                } else if (response.status === 'cancelled') {
+                    state.container.innerHTML = `<div class="alert alert-warning">Task was cancelled by the user.</div>`;
+                    clearTaskState(taskName);
+                }
+            })
+            .catch(error => {
+                state.container.innerHTML = `<div class="alert alert-danger">Error polling status: ${error.message}</div>`;
+                console.error(`Error polling main task ${taskName} status:`, error);
+                clearTaskState(taskName);
+            });
+    }
+
+    function pollAiTaskStatus() {
+        if (!currentAiTask.taskId) return;
+
+        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
+        $('#ai-output').text(`Analisis AI sedang diproses... (${formatTime(elapsedTime)})`);
+        $('#analysis-in-progress strong').text(`Analisis AI sedang diproses... (${formatTime(elapsedTime)})`);
+        $('#task-timer').text(formatTime(elapsedTime));
+        console.log(`Polling AI task ${currentAiTask.taskId}. Elapsed: ${formatTime(elapsedTime)}`);
+
+        fetch(`/task/status/${currentAiTask.taskId}`)
+            .then(res => res.json())
+            .then(response => {
+                console.log("AI task status response:", response);
+                if (response.status === 'completed') {
+                    $('#ai-output').text(response.result.analysis || "Tidak ada hasil analisis.");
+                    console.log("AI task completed.", response.result);
+                    clearAiTaskState();
+                } else if (response.status === 'error') {
+                    const errorText = response.result.stderr || response.result.message || 'An unknown AI error occurred.';
+                    $('#ai-output').html(`<span class="text-danger">Error AI: ${errorText}</span>`);
+                    console.error("AI task error.", response.result);
+                    clearAiTaskState();
+                } else if (response.status === 'cancelled') {
+                    $('#ai-output').html('<span class="text-warning">Analisis AI dibatalkan.</span>');
+                    console.warn("AI task cancelled.");
+                    clearAiTaskState();
+                }
+            })
+            .catch(error => {
+                $('#ai-output').html(`<span class="text-danger">Error polling AI status: ${error.message}</div>`);
+                console.error("Error polling AI status.", error);
+                clearAiTaskState();
+            });
+    }
+
+    async function startTask(taskName, url, body, renderFn) {
+        console.log(`Starting main task: ${taskName}`);
+        if (taskStates.has(taskName)) {
+            alert('Satu tugas sejenis sudah berjalan. Mohon tunggu atau batalkan.');
+            return;
+        }
+
+        const form = document.getElementById(`${taskName}-form`);
+        const submitButton = form.querySelector('button[type="submit"]');
+        const container = document.getElementById(`${taskName}-results-container`);
+
+        submitButton.disabled = true;
+        submitButton.querySelector('.button-text').style.display = 'none';
+        submitButton.querySelector('.spinner-border').style.display = 'inline-block';
+        container.innerHTML = ''; // Clear previous results
+
+        $('#results-area').show();
+        $('#analysis-in-progress').show();
+        $('#analysis-in-progress strong').text(`Memulai tugas ${taskName}...`);
+        startHackingAnimation();
+
+        try {
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await response.json();
+            console.log(`Initial response for main task ${taskName}:`, data);
+            if (!response.ok || data.error) throw new Error(data.error || 'Failed to start task.');
+
+            $('#task-controls').show();
+            $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+
+            const taskState = {
+                taskId: data.task_id,
+                startTime: Date.now(),
+                submitButton: submitButton,
+                container: container,
+                controls: $('#task-controls'), // Reference the main task controls
+                renderFn: renderFn,
+                intervalId: setInterval(() => pollTaskStatus(taskName), 2000)
+            };
+            taskStates.set(taskName, taskState);
+            console.log(`Main task ${taskName} started with ID: ${data.task_id}`);
+
+        } catch (error) {
+            container.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            submitButton.disabled = false;
+            submitButton.querySelector('.button-text').style.display = 'inline';
+            submitButton.querySelector('.spinner-border').style.display = 'none';
+            taskStates.delete(taskName);
+            checkAndHideProgressBar();
+            console.error(`Error starting main task ${taskName}:`, error);
+        }
+    }
+
+    function runAiAnalysis(rawResults) {
+        console.log("runAiAnalysis called.");
+        const apiKey = document.getElementById('apiKey').value;
+        if (!apiKey) {
+            $('#ai-output').html('<span class="text-warning">AI Key tidak dimasukkan. Analisis AI dilewati.</span>');
+            console.warn("AI Key is missing. Skipping AI analysis.");
+            return;
+        }
+        $('#ai-output').html('Memulai analisis AI...');
+        $('#analysis-in-progress strong').text('Memulai analisis AI...');
+        $('#analysis-in-progress').show();
+        startHackingAnimation();
+        $('#results-area').show();
+        $('#task-controls').show();
+        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+        console.log("Starting AI analysis request.");
+
+        clearAiTaskState(); // Clear any previous AI task state
+
+        fetch('/analyze_results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: apiKey, results: rawResults, language: '{{ lang_code }}' })
+        })
+        .then(res => res.json())
+        .then(response => {
+            console.log("AI analysis initial response:", response);
+            if (response.task_id) {
+                currentAiTask.taskId = response.task_id;
+                currentAiTask.startTime = Date.now();
+                currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
+                $('#ai-output').text(`Analisis AI sedang diproses... (${formatTime(0)})`);
+                console.log(`AI task started with ID: ${response.task_id}`);
+            } else if (response.error) {
+                 $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`);
+                 console.error("Error starting AI task:", response.error);
+                 checkAndHideProgressBar();
+            } else {
+                $('#ai-output').text(response.analysis || "Tidak ada hasil analisis.");
+                console.warn("AI analysis response without task_id or error.", response);
+                checkAndHideProgressBar();
+            }
+        })
+        .catch(error => {
+            $('#ai-output').html(`<span class="text-danger">Gagal memulai analisis AI: ${error.message}</span>`);
+            console.error("Failed to send AI analysis request.", error);
+            checkAndHideProgressBar();
+        });
+    }
+
+    // --- Result Rendering Functions ---
+    function renderDiscoveryResults(data) {
+        console.log("Rendering Discovery Results:", data);
+        const container = document.getElementById('discovery-results-container');
+        const endpoints = data.discovered_endpoints;
+        if (endpoints && endpoints.length > 0) {
+            const list = document.createElement('ul');
+            list.className = 'list-group list-group-flush';
+            endpoints.forEach(url => {
+                const item = document.createElement('li');
+                item.className = 'list-group-item';
+                item.textContent = url;
+                list.appendChild(item);
+            });
+            container.appendChild(list);
+        } else {
+            container.innerHTML += '<div class="alert alert-info">Tidak ada endpoint dengan parameter yang ditemukan.</div>';
+        }
+    }
+
+    function renderIdorResults(data) {
+        console.log("Rendering IDOR Results:", data);
+        const container = document.getElementById('idor-results-container');
+        const results = data.results;
+        if (!results || results.length === 0) {
+            container.innerHTML += `<div class="alert alert-info">No results to display.</div>`;
+            return;
+        }
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+        results.forEach(item => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            let statusBadge;
+            if (item.status === 'VULNERABLE') statusBadge = '<span class="badge badge-danger">VULNERABLE</span>';
+            else if (item.status === 'Secure') statusBadge = '<span class="badge badge-success">SECURE</span>';
+            else if (item.status === 'Baseline') statusBadge = '<span class="badge badge-info">BASELINE</span>';
+            else statusBadge = '<span class="badge badge-warning">INDETERMINATE</span>';
+            listItem.innerHTML = `<div><strong>ID: ${item.id}</strong><small class="text-muted d-block">HTTP: ${item.http_code} | Len: ${item.content_length}</small></div>${statusBadge}`;
+            listGroup.appendChild(listItem);
+        });
+        container.appendChild(listGroup);
+    }
+
+    // --- Form Event Listeners ---
+    document.getElementById('discovery-form').addEventListener('submit', e => { 
+        e.preventDefault(); 
+        console.log("Discovery form submitted.");
+        startTask('discovery', '/run_discovery', { start_url: document.getElementById('start-url').value, cookie: document.getElementById('discovery-cookie').value }, renderDiscoveryResults); 
+    });
+    document.getElementById('idor-form').addEventListener('submit', e => { 
+        e.preventDefault(); 
+        console.log("IDOR form submitted.");
+        startTask('idor', '/run_idor_test', { target_url: document.getElementById('target-url').value, id_list: document.getElementById('id-list').value, cookie_user_a: document.getElementById('cookie-user-a').value, id_user_a: document.getElementById('id-user-a').value }, renderIdorResults); 
+    });
+
+    // --- Bootstrap 4 Tab Activation ---
+    var hash = window.location.hash;
+    if (hash) {
+        $('#idorTabs a[href="' + hash + '"]').tab('show');
+    }
+    $('#idorTabs a').on('shown.bs.tab', function (e) {
+        window.location.hash = e.target.hash;
+    });
+});
+</script>
+{% endblock %}

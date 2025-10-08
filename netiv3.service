@@ -1,0 +1,13 @@
+[Unit]
+Description=Neti V3 Flask Application
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/usr/lib/gemini-cli/netiv3/netiV3
+ExecStart=/usr/lib/gemini-cli/netiv3/netiV3/venv/bin/gunicorn --workers 9 --timeout 300 --bind 0.0.0.0:5004 run:app
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

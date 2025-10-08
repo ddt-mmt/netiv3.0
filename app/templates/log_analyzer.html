@@ -1,0 +1,189 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.log_analyzer_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-medical-alt"></i> {{ lang.log_analyzer_title }}</h3>
+        </div>
+        <div class="card-body">
+            <p class="lead">{{ lang.log_analyzer_description }}</p>
+            <div class="mb-3">
+                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
+                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}" required>
+            </div>
+            <hr>
+
+            <form id="log-analysis-form">
+                <div class="mb-3">
+                    <label for="log-content" class="form-label">{{ lang.paste_log_data_label }}</label>
+                    <textarea class="form-control" id="log-content" rows="15" placeholder="{{ lang.paste_log_data_placeholder }}" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <span class="button-text">{{ lang.analyze_log_button }}</span>
+                    <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-area" class="mt-4" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
+            <div id="task-controls" style="display: none;">
+                <span id="task-timer" class="me-3">00:00</span>
+                <button id="cancel-button" class="btn btn-danger btn-sm">
+                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
+                </button>
+            </div>
+        </div>
+        <div id="analysis-in-progress" style="display: none;">
+            <div class="d-flex align-items-center">
+                <strong>{{ lang.processing_message }}</strong>
+                <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+            </div>
+            <div class="progress mt-2">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+            </div>
+        </div>
+        <div id="ai-output-area" class="mt-3">
+            <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
+            <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const lang = {{ lang | tojson }};
+$(document).ready(function() {
+    // Since log analysis is purely an AI task, we only need the AI task state.
+    let currentAiTask = { intervalId: null, taskId: null, startTime: null, header: '' };
+
+    function clearAiTaskState() {
+        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
+        const button = $('#log-analysis-form button[type="submit"]');
+        button.prop('disabled', false).find('.button-text').show();
+        button.find('.spinner-border').hide();
+        $('#task-controls').hide();
+        $('#analysis-in-progress').hide();
+        currentAiTask = { intervalId: null, taskId: null, startTime: null, header: '' };
+    }
+
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const sec = (seconds % 60).toString().padStart(2, '0');
+        return `${min}:${sec}`;
+    }
+
+    function pollAiTaskStatus() {
+        if (!currentAiTask.taskId) return;
+
+        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
+        $('#task-timer').text(formatTime(elapsedTime));
+        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
+
+        $.ajax({
+            url: `/task/status/${currentAiTask.taskId}`,
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'completed') {
+                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "No analysis result."))).show();
+                    clearAiTaskState();
+                } else if (response.status === 'error') {
+                    const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
+                    $('#ai-output').html(`<span class="text-danger">AI Error: ${errorText}</span>`);
+                    clearAiTaskState();
+                } else if (response.status === 'cancelled') {
+                    $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
+                    clearAiTaskState();
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status}: ${xhr.responseText}</span>`);
+                clearAiTaskState();
+            }
+        });
+    }
+
+    function cancelCurrentTask() {
+        if (currentAiTask.taskId) {
+            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
+            $.ajax({
+                url: `/task/cancel/${currentAiTask.taskId}`,
+                type: 'POST',
+                error: function(xhr) {
+                    $('#ai-output').append(`\n<span class="text-danger">${lang.failed_to_send_cancel_request}</span>`);
+                    $('#cancel-button').prop('disabled', false).text(lang.cancel_button);
+                }
+            });
+        }
+    }
+
+    $('#log-analysis-form').on('submit', function(event) {
+        event.preventDefault();
+        if (currentAiTask.taskId) {
+            alert(lang.task_already_running_wait_cancel);
+            return;
+        }
+
+        const apiKey = $('#apiKey').val();
+        const logContent = $('#log-content').val();
+
+        if (!apiKey || !logContent) {
+            alert(lang.api_key_and_log_content_required);
+            return;
+        }
+
+        const button = $(this).find('button[type="submit"]');
+        button.prop('disabled', true).find('.button-text').hide();
+        button.find('.spinner-border').show();
+
+        $('#results-area').show();
+        $('#analysis-in-progress').show();
+        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
+        $('#task-controls').show();
+        $('#cancel-button').prop('disabled', false).text(lang.cancel_button);
+        $('#ai-output').text(lang.starting_ai_analysis);
+
+        let header = `### {{ lang.log_analyzer_title }}\n\n`;
+        header += `**Date & Time:** ${new Date().toLocaleString()}\n`;
+        header += `**Log Snippet:** ${logContent.substring(0, 100)}...\n\n`;
+        header += `---\n\n`;
+        currentAiTask.header = header;
+
+        $.ajax({
+            url: '/analyze_logs',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                api_key: apiKey, 
+                log_content: logContent, 
+                language: '{{ lang_code }}' 
+            }),
+            success: function(response) {
+                if (response.task_id) {
+                    currentAiTask.taskId = response.task_id;
+                    currentAiTask.startTime = Date.now();
+                    pollAiTaskStatus(); // Initial call
+                    currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
+                } else {
+                    $('#ai-output').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_ai_analysis}</span>`);
+                    clearAiTaskState();
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis}: ${xhr.responseText}</span>`);
+                clearAiTaskState();
+            }
+        });
+    });
+
+    $('#cancel-button').on('click', cancelCurrentTask);
+});
+</script>
+{% endblock %}

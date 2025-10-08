@@ -1,0 +1,167 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.ai_utilities_title | default("AI Utilities") }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-robot"></i> {{ lang.ai_utilities_title | default("AI Utilities") }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
+                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_required }}" required>
+            </div>
+            <hr>
+
+            <!-- Nav Tabs -->
+            <ul class="nav nav-tabs" id="aiUtilsTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="payload-generator-tab" data-toggle="tab" href="#payload-generator" role="tab" aria-controls="payload-generator" aria-selected="true">{{ lang.payload_generator_tab | default("Payload Generator") }}</a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content pt-3" id="aiUtilsTabContent">
+                <!-- Payload Generator Tab -->
+                <div class="tab-pane fade show active" id="payload-generator" role="tabpanel">
+                    <p class="card-text">{{ lang.payload_generator_description | default("Describe the vulnerability or target, and the AI will generate a potential payload.") }}</p>
+                    <form class="analysisForm" data-url="/generate_payload">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.vulnerability_description_label | default("Vulnerability / Target Description") }}</label>
+                            <textarea class="form-control" name="description" rows="4" placeholder="{{ lang.payload_generator_placeholder | default('e.g., SQL injection for a login form with a username parameter named \'user\'.') }}" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.generate_payload_button | default("Generate Payload") }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-area" class="mt-4">
+        <h4 class="mb-2">{{ lang.generated_payload_title | default("Generated Payload") }}</h4>
+        <div id="analysis-in-progress" style="display: none;">
+            <div class="d-flex align-items-center">
+                <strong>{{ lang.processing_message }}</strong>
+                <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+            </div>
+            <div class="progress mt-2">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+            </div>
+        </div>
+        <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const lang = {{ lang | tojson }};
+$(document).ready(function() {
+    // --- State Management ---
+    let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+
+    function clearTaskState() {
+        if (currentTask.intervalId) clearInterval(currentTask.intervalId);
+        if (currentTask.submitButton) {
+            const button = $(currentTask.submitButton);
+            button.prop('disabled', false).find('.button-text').show();
+            button.find('.spinner-border').hide();
+        }
+        $('#analysis-in-progress').hide();
+        currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+    }
+
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const sec = (seconds % 60).toString().padStart(2, '0');
+        return `${min}:${sec}`;
+    }
+
+    // --- API Communication ---
+    function pollTaskStatus(taskId) {
+        const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
+        $('#analysis-in-progress strong').text(`${lang.processing_message} (${formatTime(elapsedTime)})`);
+
+        $.ajax({
+            url: `/task/status/${taskId}`,
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'completed') {
+                    const resultText = response.result.stdout || JSON.stringify(response.result, null, 2);
+                    $('#output-display').text(resultText);
+                    clearTaskState();
+                } else if (response.status === 'error') {
+                    const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
+                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`);
+                    clearTaskState();
+                } else if (response.status === 'cancelled') {
+                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`);
+                    clearTaskState();
+                }
+            },
+            error: function(xhr) {
+                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`);
+                clearTaskState();
+            }
+        });
+    }
+
+    // --- Event Handlers for main analysis forms ---
+    $('form.analysisForm').on('submit', function(event) {
+        event.preventDefault();
+        if (currentTask.taskId) {
+            alert(lang.task_already_running_wait_cancel);
+            return;
+        }
+        const form = $(this);
+        const button = form.find('button[type="submit"]');
+        const url = form.data('url');
+        let data = {};
+        form.serializeArray().forEach(item => { data[item.name] = item.value; });
+        
+        // Add api_key to the data payload
+        data['api_key'] = $('#apiKey').val();
+
+        if (!data['api_key']) {
+            alert(lang.ai_key_placeholder_required || 'API Key is required.');
+            return;
+        }
+
+        currentTask.submitButton = button;
+
+        button.prop('disabled', true).find('.button-text').hide();
+        button.find('.spinner-border').show();
+        $('#analysis-in-progress').show();
+        $('#analysis-in-progress strong').text(lang.starting_task);
+        $('#output-display').text(lang.results_will_be_displayed_here);
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                if (response.task_id) {
+                    currentTask.taskId = response.task_id;
+                    currentTask.startTime = Date.now();
+                    currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id), 2000);
+                } else {
+                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`);
+                    clearTaskState();
+                }
+            },
+            error: function(xhr) {
+                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`);
+                clearTaskState();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

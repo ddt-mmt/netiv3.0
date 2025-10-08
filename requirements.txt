@@ -1,0 +1,17 @@
+Flask==3.1.2
+gunicorn==23.0.0
+dnspython==2.6.1
+sublist3r==1.0
+google-generativeai==0.8.5
+paramiko==4.0.0
+python-nmap==0.7.1
+requests==2.32.5
+# Add other necessary dependencies here
+pymetasploit3
+urllib3==2.2.2
+weasyprint==66.0
+Werkzeug
+wheel==0.43.0
+xhtml2pdf==0.2.15
+zipp==3.19.2
+beautifulsoup4==4.12.3

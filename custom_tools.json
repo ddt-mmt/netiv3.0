@@ -1,0 +1,123 @@
+[
+  {
+    "id": "whois",
+    "tab_name": {
+      "en": "Whois",
+      "id": "Whois"
+    },
+    "input_label": {
+      "en": "Target Domain",
+      "id": "Domain Target"
+    },
+    "input_name": "target",
+    "placeholder": "example.com",
+    "command": "whois {{target}}",
+    "category": "domain",
+    "description": {
+      "en": "Performs a Whois lookup to get registration information for a domain.",
+      "id": "Melakukan pencarian Whois untuk mendapatkan informasi registrasi sebuah domain."
+    }
+  },
+  {
+    "id": "http_headers",
+    "tab_name": {
+      "en": "HTTP Headers",
+      "id": "Header HTTP"
+    },
+    "input_label": {
+      "en": "Target URL",
+      "id": "URL Target"
+    },
+    "input_name": "target",
+    "placeholder": "http://example.com",
+    "command": "curl -I {{target}}",
+    "category": "web",
+    "description": {
+      "en": "Fetches and displays the HTTP headers from a web server.",
+      "id": "Mengambil dan menampilkan header HTTP dari sebuah server web."
+    }
+  },
+  {
+    "id": "dig_a",
+    "tab_name": {
+      "en": "Dig (A Record)",
+      "id": "Dig (A Record)"
+    },
+    "input_label": {
+      "en": "Target Domain",
+      "id": "Domain Target"
+    },
+    "input_name": "target",
+    "placeholder": "example.com",
+    "command": "dig A {{target}}",
+    "category": "net",
+    "description": {
+      "en": "Performs a DNS lookup to find the A record (IP address) for a domain.",
+      "id": "Melakukan pencarian DNS untuk menemukan A record (alamat IP) sebuah domain."
+    }
+  },
+  {
+    "id": "cisco_ver",
+    "tab_name": {
+      "en": "Cisco Version",
+      "id": "Versi Cisco"
+    },
+    "input_label": {
+      "en": "Device IP",
+      "id": "IP Perangkat"
+    },
+    "input_name": "target",
+    "placeholder": "192.168.1.1",
+    "command": "ssh user@{{target}} show version",
+    "category": "device",
+    "description": {
+      "en": "SSH into a Cisco device and run 'show version'. (Requires SSH key auth to be set up).",
+      "id": "Masuk ke perangkat Cisco via SSH dan jalankan 'show version'. (Membutuhkan autentikasi kunci SSH)."
+    },
+    "warning": {
+      "en": "This tool uses SSH to connect to the device. Ensure you have proper authorization to access the target device. Your actions may be logged.",
+      "id": "Alat ini menggunakan SSH untuk terhubung ke perangkat. Pastikan Anda memiliki otorisasi yang tepat untuk mengakses perangkat target. Tindakan Anda mungkin dicatat."
+    }
+  },
+  {
+    "id": "grep_error",
+    "tab_name": {
+      "en": "Grep Errors",
+      "id": "Cari Error"
+    },
+    "input_label": {
+      "en": "Log File Path",
+      "id": "Path File Log"
+    },
+    "input_name": "target",
+    "placeholder": "/var/log/syslog",
+    "command": "grep -i 'error' {{target}}",
+    "category": "log",
+    "description": {
+      "en": "Searches for lines containing the word 'error' (case-insensitive) in a local log file.",
+      "id": "Mencari baris yang mengandung kata 'error' (case-insensitive) di dalam file log lokal."
+    }
+  },
+  {
+    "id": "ssh_audit",
+    "tab_name": {
+      "en": "SSH Audit",
+      "id": "Audit SSH"
+    },
+    "input_label": {
+      "en": "Target IP or Host",
+      "id": "IP atau Host Target"
+    },
+    "placeholder": "192.168.1.1",
+    "command": "ssh-audit {{target}}",
+    "category": "net",
+    "description": {
+      "en": "Audits SSH server configuration for security best practices.",
+      "id": "Mengaudit konfigurasi server SSH sesuai praktik keamanan terbaik."
+    },
+    "warning": {
+      "en": "This is an active audit and will be logged by the target server. Use with permission.",
+      "id": "Ini adalah audit aktif dan akan tercatat di log server target. Gunakan dengan izin."
+    }
+  }
+]

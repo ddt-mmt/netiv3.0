@@ -1,0 +1,94 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.index_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="hero-section mb-5">
+        <h1 class="display-4">{{ lang.app_name }}</h1>
+        <p class="lead text-muted">{{ lang.index_hero_tagline }}</p>
+    </div>
+
+    <h2 class="mb-4 text-center">{{ lang.select_analysis_tool }}</h2>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='network_analysis';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+                    <h5 class="card-title">{{ lang.network_analysis_card_title }}</h5>
+                    <p class="card-text">{{ lang.network_analysis_card_text }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='web_domain_analysis';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-search-location"></i></div>
+                    <h5 class="card-title">{{ lang.web_analysis_card_title }}</h5>
+                    <p class="card-text">{{ lang.web_analysis_card_text }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='network_device_target';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-server"></i></div>
+                    <h5 class="card-title">{{ lang.network_device_analyzer_card_title }}</h5>
+                    <p class="card-text">{{ lang.network_device_analyzer_card_text }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='log_analyzer';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-file-alt"></i></div>
+                    <h5 class="card-title">{{ lang.log_analyzer_card_title }}</h5>
+                    <p class="card-text">{{ lang.log_analyzer_card_text }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='email_target';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-envelope"></i></div>
+                    <h5 class="card-title">{{ lang.email_target_card_title }}</h5>
+                    <p class="card-text">{{ lang.email_target_card_text }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='exploit';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-biohazard"></i></div>
+                    <h5 class="card-title">{{ lang.exploit_framework_card_title }}</h5>
+                    <p class="card-text">{{ lang.exploit_framework_card_text }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='api_security';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h5 class="card-title">{{ lang.api_security_card_title | default('API Security') }}</h5>
+                    <p class="card-text">{{ lang.api_security_card_text | default('Tools for testing API security.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='ai_utilities';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-robot"></i></div>
+                    <h5 class="card-title">{{ lang.ai_utilities_card_title | default('AI Utilities') }}</h5>
+                    <p class="card-text">{{ lang.ai_utilities_card_text | default('AI-powered helpers for security tasks.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# No additional scripts needed for the index page #}
+{% endblock %}
