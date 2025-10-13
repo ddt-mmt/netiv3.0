@@ -97,6 +97,23 @@
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="udp_scan"><label class="form-check-label"><strong>{{ lang.udp_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.udp_scan_description }}</small></label></div>
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="vuln_scan"><label class="form-check-label"><strong>{{ lang.vuln_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.vuln_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_vuln_scan_warning }}</small></label></div>
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="ssh_audit"><label class="form-check-label"><strong>{{ lang.ssh_security_audit_title }}</strong><small class="form-text text-muted d-block">{{ lang.ssh_security_audit_description }}</small></label></div>
+                        
+                        <!-- Custom Scan Option -->
+                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="custom_scan"><label class="form-check-label"><strong>{{ lang.custom_scan_title | default('Custom Scan') }}</strong><small class="form-text text-muted d-block">{{ lang.custom_scan_description | default('Enter custom ports and arguments.') }}</small></label></div>
+                        
+                        <div id="nmap-custom-options" class="mt-3" style="display: none;">
+                            <div class="mb-3">
+                                <label for="nmap-custom-ports" class="form-label">{{ lang.custom_ports_label | default('Custom Ports') }}</label>
+                                <input type="text" class="form-control" id="nmap-custom-ports" name="custom_ports" placeholder="cth: 22,80,443 atau 1-1024">
+                                <small class="form-text text-muted">{{ lang.custom_ports_description | default('Leave blank to use Nmap default port scanning behavior.') }}</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nmap-custom-args" class="form-label">{{ lang.custom_arguments_label | default('Custom Arguments') }}</label>
+                                <input type="text" class="form-control" id="nmap-custom-args" name="custom_args" placeholder="cth: -sV --script http-title --open">
+                                <small class="form-text text-muted">{{ lang.custom_arguments_description | default('Enter any additional Nmap flags. The target is added automatically.') }}</small>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-danger w-100 mt-3">
                             <span class="button-text">{{ lang.run_nmap_analysis_button }}</span>
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
@@ -400,6 +417,13 @@ $(document).ready(function() {
         const url = form.data('url');
         let data = {};
         form.serializeArray().forEach(item => { data[item.name] = item.value; });
+
+        // If it's the Nmap form and custom scan is selected, add custom fields
+        if (form.attr('id') === 'nmapForm' && data.scan_type === 'custom_scan') {
+            data.custom_ports = $('#nmap-custom-ports').val();
+            data.custom_args = $('#nmap-custom-args').val();
+        }
+
         if (form.hasClass('customAnalysisForm')) {
             data['tool_id'] = form.data('tool-id');
         }
@@ -467,6 +491,15 @@ $(document).ready(function() {
     }
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         window.location.hash = e.target.hash;
+    });
+
+    // Nmap custom scan options visibility
+    $('input[name="scan_type"]').on('change', function() {
+        if ($(this).val() === 'custom_scan') {
+            $('#nmap-custom-options').slideDown();
+        } else {
+            $('#nmap-custom-options').slideUp();
+        }
     });
 });
 </script>

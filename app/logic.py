@@ -154,35 +154,48 @@ def perform_nslookup_scan(target):
     """Starts a background nslookup scan task."""
     return create_task(perform_nslookup_scan_worker, target)
 
-def perform_nmap_scan_worker(task_id, target, scan_type):
+def perform_nmap_scan_worker(task_id, target, scan_type, custom_ports=None, custom_args=None):
     """Worker that executes nmap command line."""
-    scan_args = {
-        'ping_scan': '-sn',
-        'quick_scan': '-T4 -F',
-        'intense_scan': '-T4 -A -v',
-        'udp_scan': '-sU',
-        'vuln_scan': '--script vuln',
-        'ssh_audit': '-p 22 --script ssh2-enum-algos,ssh-auth-methods'
-    }
-    arguments = scan_args.get(scan_type)
-    if not arguments:
-        tasks[task_id]['status'] = 'error'
-        tasks[task_id]['result'] = {'stdout': None, 'stderr': f"Invalid scan type: {scan_type}"}
-        tasks[task_id]['end_time'] = time.time()
-        return
+    arguments = ''
+    if scan_type == 'custom_scan':
+        # Build command from custom parts
+        command = ['nmap']
+        if custom_args:
+            # Important: Split custom args to handle them as individual arguments
+            command.extend(shlex.split(custom_args))
+        if custom_ports:
+            command.extend(['-p', shlex.quote(custom_ports)])
+    else:
+        # Use predefined scan types
+        scan_args = {
+            'ping_scan': '-sn',
+            'quick_scan': '-T4 -F',
+            'intense_scan': '-T4 -A -v',
+            'udp_scan': '-sU',
+            'vuln_scan': '--script vuln',
+            'ssh_audit': '-p 22 --script ssh2-enum-algos,ssh-auth-methods'
+        }
+        arguments = scan_args.get(scan_type)
+        if not arguments:
+            tasks[task_id]['status'] = 'error'
+            tasks[task_id]['result'] = {'stdout': None, 'stderr': f"Invalid scan type: {scan_type}"}
+            tasks[task_id]['end_time'] = time.time()
+            return
+        # Construct the command line for predefined scans
+        command = ['nmap'] + shlex.split(arguments)
 
     try:
-        # Construct the command line, splitting arguments correctly
-        command = ['nmap'] + shlex.split(arguments) + [shlex.quote(str(target))]
+        # Add the target at the end, always sanitized
+        command.append(shlex.quote(str(target)))
         run_command_worker(task_id, command)
     except Exception as e:
         tasks[task_id]['status'] = 'error'
         tasks[task_id]['result'] = {'stdout': None, 'stderr': str(e)}
         tasks[task_id]['end_time'] = time.time()
 
-def perform_nmap_scan(target, scan_type):
+def perform_nmap_scan(target, scan_type, custom_ports=None, custom_args=None):
     """Starts a background nmap scan task."""
-    return create_task(perform_nmap_scan_worker, target, scan_type)
+    return create_task(perform_nmap_scan_worker, target, scan_type, custom_ports=custom_ports, custom_args=custom_args)
 def get_network_device_info_worker(task_id, device_type, host, username, password):
     """Worker that connects to a network device via SSH and gets its configuration."""
     try:

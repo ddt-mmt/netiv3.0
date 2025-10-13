@@ -203,10 +203,15 @@ def run_nmap():
         data = request.json
         target = data.get('target')
         scan_type = data.get('scan_type')
+        custom_ports = data.get('custom_ports') # New
+        custom_args = data.get('custom_args')   # New
+
         if not all([target, scan_type]):
             return jsonify({'error': 'Target and scan_type are required.'}), 400
-        task_id = perform_nmap_scan(target, scan_type)
-        # We don't store in session anymore, frontend will fetch result
+        
+        # Pass the new optional arguments to the logic function
+        task_id = perform_nmap_scan(target, scan_type, custom_ports=custom_ports, custom_args=custom_args)
+        
         return jsonify({'task_id': task_id}), 202
     except Exception as e:
         return jsonify({'error': str(e)}), 500
