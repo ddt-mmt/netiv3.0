@@ -4,6 +4,7 @@
 
 This update focuses on improving user experience, consolidating features, and enhancing AI integration:
 
+*   **Custom Nmap Scans**: Users can now define their own Nmap scans with custom ports and arguments, allowing for more flexible and targeted scanning.
 *   **Feature Consolidation:** Merged 'Web Analysis' and 'Domain/Subdomain Target' into a single 'Web & Domain Analysis' page and a single card on the main dashboard for better efficiency.
 *   **Enhanced AI Integration:** Fully integrated AI analysis across all relevant pages, including 'Network Device Analyzer' and 'Email Target', ensuring comprehensive AI-powered insights.
 *   **Improved User Experience:** Added descriptive placeholder examples to various input fields (e.g., IP, Domain, URL) to guide users on expected input formats.
@@ -68,6 +69,7 @@ netiV3 provides a suite of tools for network analysis and penetration testing, a
 ### Network Analysis
 - Perform basic network diagnostics like Ping, Traceroute, and NSLookup.
 - Run various Nmap scans (Quick, Intense, UDP, Vulnerability) against a target.
+- **Custom Nmap Scans**: Define your own Nmap scans with custom ports and arguments for flexible and targeted scanning.
 
 ### Web & Domain Analysis
 - **Nikto Scanner**: Run Nikto scans against a web server to find potential vulnerabilities.
