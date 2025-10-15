@@ -99,3 +99,7 @@ body {
     height: 1rem;
     border-width: .2em;
 }
+
+.button-text {
+    display: inline !important;
+}

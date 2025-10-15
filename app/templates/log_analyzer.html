@@ -22,7 +22,7 @@
                     <textarea class="form-control" id="log-content" rows="15" placeholder="{{ lang.paste_log_data_placeholder }}" required></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
-                    <span class="button-text">{{ lang.analyze_log_button }}</span>
+                    {{ lang.analyze_log_button }}
                     <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                 </button>
             </form>
@@ -30,7 +30,7 @@
     </div>
 
     <!-- Results Area -->
-    <div id="results-area" class="mt-4" style="display: none;">
+    <div id="results-area" class="mt-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
             <div id="task-controls" style="display: none;">
@@ -40,18 +40,27 @@
                 </button>
             </div>
         </div>
-        <div id="analysis-in-progress" style="display: none;">
-            <div class="d-flex align-items-center">
-                <strong>{{ lang.processing_message }}</strong>
-                <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
-            </div>
-            <div class="progress mt-2">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+        <div class="row">
+            <div class="col-md-12">
+                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
+                <div id="analysis-in-progress" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <strong>{{ lang.processing_message }}</strong>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
             </div>
         </div>
-        <div id="ai-output-area" class="mt-3">
-            <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
-            <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div id="ai-output-area">
+                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
+                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -67,7 +76,7 @@ $(document).ready(function() {
     function clearAiTaskState() {
         if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
         const button = $('#log-analysis-form button[type="submit"]');
-        button.prop('disabled', false).find('.button-text').show();
+        button.prop('disabled', false);
         button.find('.spinner-border').hide();
         $('#task-controls').hide();
         $('#analysis-in-progress').hide();
@@ -140,7 +149,7 @@ $(document).ready(function() {
         }
 
         const button = $(this).find('button[type="submit"]');
-        button.prop('disabled', true).find('.button-text').hide();
+        button.prop('disabled', true);
         button.find('.spinner-border').show();
 
         $('#results-area').show();
@@ -148,6 +157,7 @@ $(document).ready(function() {
         $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
         $('#task-controls').show();
         $('#cancel-button').prop('disabled', false).text(lang.cancel_button);
+        $('#output-display').text(logContent).show();
         $('#ai-output').text(lang.starting_ai_analysis);
 
         let header = `### {{ lang.log_analyzer_title }}\n\n`;
@@ -163,7 +173,7 @@ $(document).ready(function() {
             data: JSON.stringify({
                 api_key: apiKey, 
                 log_content: logContent, 
-                language: '{{ lang_code }}' 
+                language: '{{ lang_code }}'
             }),
             success: function(response) {
                 if (response.task_id) {

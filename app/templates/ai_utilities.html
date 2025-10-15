@@ -44,17 +44,31 @@
 
     <!-- Results Area -->
     <div id="results-area" class="mt-4">
-        <h4 class="mb-2">{{ lang.generated_payload_title | default("Generated Payload") }}</h4>
-        <div id="analysis-in-progress" style="display: none;">
-            <div class="d-flex align-items-center">
-                <strong>{{ lang.processing_message }}</strong>
-                <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
-            </div>
-            <div class="progress mt-2">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">{{ lang.generated_payload_title | default("Generated Payload") }}</h4>
+            <div id="task-controls" style="display: none;">
+                <span id="task-timer" class="me-3">00:00</span>
+                <button id="cancel-button" class="btn btn-danger btn-sm">
+                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
+                </button>
             </div>
         </div>
-        <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
+        <div class="row">
+            <div class="col-md-12">
+                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
+                <div id="analysis-in-progress" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <strong>{{ lang.processing_message }}</strong>
+                        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div id="hacking-animation" style="display: none; font-family: 'monospace'; white-space: pre; overflow: auto; background-color: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 5px; height: 200px;"></div>
+                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -73,8 +87,15 @@ $(document).ready(function() {
             button.prop('disabled', false).find('.button-text').show();
             button.find('.spinner-border').hide();
         }
-        $('#analysis-in-progress').hide();
+        $('#task-controls').hide();
         currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+        checkAndHideProgressBar();
+    }
+
+    function checkAndHideProgressBar() {
+        if (!currentTask.taskId) {
+            $('#analysis-in-progress').hide();
+        }
     }
 
     function formatTime(seconds) {
@@ -86,33 +107,84 @@ $(document).ready(function() {
     // --- API Communication ---
     function pollTaskStatus(taskId) {
         const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
-        $('#analysis-in-progress strong').text(`${lang.processing_message} (${formatTime(elapsedTime)})`);
+        $('#task-timer').text(formatTime(elapsedTime));
+        $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
 
         $.ajax({
             url: `/task/status/${taskId}`,
             type: 'GET',
             success: function(response) {
                 if (response.status === 'completed') {
+                    stopHackingAnimation();
                     const resultText = response.result.stdout || JSON.stringify(response.result, null, 2);
-                    $('#output-display').text(resultText);
+                    $('#output-display').text(resultText).show();
                     clearTaskState();
                 } else if (response.status === 'error') {
+                    stopHackingAnimation();
                     const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
-                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`);
+                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
                     clearTaskState();
                 } else if (response.status === 'cancelled') {
-                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`);
+                    stopHackingAnimation();
+                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
                     clearTaskState();
                 }
             },
             error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`);
+                stopHackingAnimation();
+                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`).show();
                 clearTaskState();
             }
         });
     }
 
+    function cancelCurrentTask() {
+        let tasksToCancel = [];
+        if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
+
+        if (tasksToCancel.length > 0) {
+            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
+            $('#analysis-in-progress strong').text(lang.cancelling_message);
+
+            let cancelPromises = tasksToCancel.map(taskId => {
+                return $.ajax({
+                    url: `/task/cancel/${taskId}`,
+                    type: 'POST'
+                }).fail(function(xhr) {
+                    console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
+                });
+            });
+
+            $.when(...cancelPromises).always(function() {
+                $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+            });
+        } else {
+            alert(lang.no_running_tasks_to_cancel);
+        }
+    }
+
     // --- Event Handlers for main analysis forms ---
+    let hackingAnimationInterval;
+
+    function startHackingAnimation() {
+        let frames = [
+            "[Generating...]",
+            "[Generating.. ]",
+            "[Generating.  ]",
+            "[Generating   ]"
+        ];
+        let i = 0;
+        $('#hacking-animation').show().text(frames[0]);
+        hackingAnimationInterval = setInterval(() => {
+            $('#hacking-animation').text(frames[i = (i + 1) % frames.length]);
+        }, 200);
+    }
+
+    function stopHackingAnimation() {
+        clearInterval(hackingAnimationInterval);
+        $('#hacking-animation').hide();
+    }
+
     $('form.analysisForm').on('submit', function(event) {
         event.preventDefault();
         if (currentTask.taskId) {
@@ -125,7 +197,6 @@ $(document).ready(function() {
         let data = {};
         form.serializeArray().forEach(item => { data[item.name] = item.value; });
         
-        // Add api_key to the data payload
         data['api_key'] = $('#apiKey').val();
 
         if (!data['api_key']) {
@@ -139,7 +210,10 @@ $(document).ready(function() {
         button.find('.spinner-border').show();
         $('#analysis-in-progress').show();
         $('#analysis-in-progress strong').text(lang.starting_task);
-        $('#output-display').text(lang.results_will_be_displayed_here);
+        $('#output-display').hide();
+        startHackingAnimation();
+        $('#task-controls').show();
+        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
 
         $.ajax({
             url: url,
@@ -152,15 +226,28 @@ $(document).ready(function() {
                     currentTask.startTime = Date.now();
                     currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id), 2000);
                 } else {
-                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`);
+                    stopHackingAnimation();
+                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
                     clearTaskState();
                 }
             },
             error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`);
+                stopHackingAnimation();
+                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`).show();
                 clearTaskState();
             }
         });
+    });
+
+    $('#cancel-button').on('click', cancelCurrentTask);
+
+    // Bootstrap 4 tab activation
+    var hash = window.location.hash;
+    if (hash) {
+        $('#aiUtilsTab a[href="' + hash + '"]').tab('show');
+    }
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        window.location.hash = e.target.hash;
     });
 });
 </script>

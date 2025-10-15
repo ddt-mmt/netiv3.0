@@ -42,7 +42,7 @@
                             <input type="text" class="form-control" name="target_url" placeholder="{{ lang.target_url_placeholder_nikto }}" required>
                         </div>
                         <button type="submit" class="btn btn-danger w-100">
-                            <span class="button-text">{{ lang.run_nikto_scan_button }}</span>
+                            {{ lang.run_nikto_scan_button }}
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </form>
@@ -57,7 +57,7 @@
                             <input type="text" class="form-control" name="target_url" placeholder="{{ lang.target_url_placeholder_xxe }}" required>
                         </div>
                         <button type="submit" class="btn btn-danger w-100">
-                            <span class="button-text">{{ lang.run_xxe_scan_button }}</span>
+                            {{ lang.run_xxe_scan_button }}
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </form>
@@ -72,7 +72,7 @@
                             <input type="hidden" name="scan_type" value="subdomain_enum">
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
-                            <span class="button-text">{{ lang.subdomain_scan_button }}</span>
+                            {{ lang.subdomain_scan_button }}
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </form>
@@ -87,7 +87,7 @@
                             <input type="text" class="form-control" name="target_domain" placeholder="{{ lang.target_domain_placeholder }}" required>
                         </div>
                         <button type="submit" class="btn btn-warning w-100">
-                            <span class="button-text">{{ lang.run_dns_zone_transfer_button }}</span>
+                            {{ lang.run_dns_zone_transfer_button }}
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </form>
@@ -111,12 +111,26 @@
                             </select>
                         </div>
                         <button type="submit" class="btn btn-danger w-100">
-                            <span class="button-text">Run Nuclei Scan</span>
+                            Run Nuclei Scan
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </form>
                 </div>
                 <!-- Custom Tools -->
+                {% for tool in web_tools %}
+                <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
+                    <h5>{{ tool.tab_name[lang_code] }}</h5>
+                    <p>{{ tool.description[lang_code] }}</p>
+                    {% if tool.warning %}<div class="alert alert-warning mt-2"><b>{{ lang.tool_warning_label }}</b> {{ tool.warning[lang_code] }}</div>{% endif %}
+                    <form class="customAnalysisForm analysisForm" data-url="/run_custom_scan" data-tool-id="{{ tool.id }}">
+                        <div class="mb-3"><label class="form-label">{{ tool.input_label[lang_code] }}:</label><input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required></div>
+                        <button type="submit" class="btn btn-info w-100">
+                            {{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
                 {% for tool in domain_tools %}
                 <div class="tab-pane fade" id="{{ tool.id }}-domain" role="tabpanel">
                     <h5>{{ tool.tab_name[lang_code] }}</h5>
@@ -128,32 +142,13 @@
                             <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
                         </div>
                         <button type="submit" class="btn btn-info w-100">
-                            <span class="button-text">{{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}</span>
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <div class="tab-pane fade" id="{{ tool.id }}-domain" role="tabpanel">
-                    <h5>{{ tool.tab_name[lang_code] }}</h5>
-                    <p>{{ tool.description[lang_code] }}</p>
-                    {% if tool.warning %}<div class="alert alert-warning"><b>{{ lang.tool_warning_label }}</b> {{ tool.warning[lang_code] }}</div>{% endif %}
-                    <form class="customAnalysisForm analysisForm" data-url="/run_custom_scan" data-tool-id="{{ tool.id }}">
-                        <div class="mb-3">
-                            <label class="form-label">{{ tool.input_label[lang_code] }}:</label>
-                            <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-info w-100">
-                            <span class="button-text">{{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}</span>
+                            {{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}
                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </form>
                 </div>
                 {% endfor %}
             </div>
-        </div>
-    </div>
-
-    <!-- Results Area -->
     <div id="results-area" class="mt-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
@@ -170,13 +165,11 @@
                 <div id="analysis-in-progress" style="display: none;">
                     <div class="d-flex align-items-center">
                         <strong>{{ lang.processing_message }}</strong>
-                        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
                     </div>
                     <div class="progress mt-2">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
                     </div>
                 </div>
-                <div id="hacking-animation" style="display: none; font-family: 'monospace'; white-space: pre; overflow: auto; background-color: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 5px; height: 200px;"></div>
                 <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
             </div>
         </div>
@@ -187,6 +180,8 @@
                     <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 </div>
@@ -209,13 +204,19 @@ $(document).ready(function() {
         }
         $('#task-controls').hide();
         currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-        // DO NOT clear AI task state here. The AI task has its own lifecycle.
+        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
     }
 
     function clearAiTaskState() {
         if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
         currentAiTask = { intervalId: null, taskId: null, startTime: null };
-        // The UI text should persist, so we don't reset it here.
+        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
+    }
+
+    function checkAndHideProgressBar() {
+        if (!currentTask.taskId && !currentAiTask.taskId) {
+            $('#analysis-in-progress').hide();
+        }
     }
 
     function formatTime(seconds) {
@@ -228,28 +229,28 @@ $(document).ready(function() {
     function pollTaskStatus(taskId, analysisTitle, analysisMethod, analysisTarget) {
         const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
         $('#task-timer').text(formatTime(elapsedTime));
+        $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
 
         $.ajax({
             url: `/task/status/${taskId}`,
             type: 'GET',
             success: function(response) {
                 if (response.status === 'completed') {
-                    const resultText = response.result.stdout || JSON.stringify(response.result, null, 2);
-                    console.log("Main task completed. Triggering AI analysis.");
                     runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget); // Trigger AI analysis after main task completes
                     $('#output-display').hide(); // Hide raw output display on successful completion
                     clearTaskState();
                 } else if (response.status === 'error') {
                     const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
-                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`);
+                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
                     clearTaskState();
                 } else if (response.status === 'cancelled') {
-                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`);
+                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
                     clearTaskState();
                 }
             },
             error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`);
+                stopHackingAnimation();
+                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`).show();
                 clearTaskState();
             }
         });
@@ -259,7 +260,7 @@ $(document).ready(function() {
         if (!currentAiTask.taskId) return;
 
         const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
-        $('#ai-output').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
+        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
         console.log(`Polling AI task ${currentAiTask.taskId}. Elapsed: ${formatTime(elapsedTime)}`);
 
         $.ajax({
@@ -290,28 +291,47 @@ $(document).ready(function() {
     }
 
     function cancelCurrentTask() {
-        if (currentTask.taskId) {
+        let tasksToCancel = [];
+        if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
+        if (currentAiTask.taskId) tasksToCancel.push(currentAiTask.taskId);
+
+        if (tasksToCancel.length > 0) {
             $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
-            $.ajax({
-                url: `/task/cancel/${currentTask.taskId}`,
-                type: 'POST',
-                success: function() { /* Polling will handle UI */ },
-                                error: function(xhr) {
-                                    $('#output-display').append(`\n<span class="text-danger">${lang.failed_to_send_cancel_request}</span>`);                    $('#cancel-button').prop('disabled', false).text('Cancel');
-                }
+            $('#analysis-in-progress strong').text(lang.cancelling_message);
+
+            let cancelPromises = tasksToCancel.map(taskId => {
+                return $.ajax({
+                    url: `/task/cancel/${taskId}`,
+                    type: 'POST'
+                }).fail(function(xhr) {
+                    console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
+                    // Optionally update a specific error message for this task
+                });
             });
+
+            $.when(...cancelPromises).always(function() {
+                // Polling functions will eventually pick up the 'cancelled' status
+                // and clear their respective states. The checkAndHideProgressBar will then hide the progress bar.
+                // Re-enable button and reset text after all attempts
+                $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+            });
+        } else {
+            alert(lang.no_running_tasks_to_cancel);
         }
     }
 
     function runAiAnalysis(rawResults, analysisTitle, analysisMethod, analysisTarget) {
         console.log("runAiAnalysis called.");
         const apiKey = $('#apiKey').val();
+        console.log("DEBUG: API Key value read from input field: '" + apiKey + "'"); // Tambahan untuk Debug
         if (!apiKey) {
             $('#ai-output').html(`<span class="text-warning">${lang.ai_key_not_entered_ai_skipped}</span>`);
             console.warn("AI Key is missing. Skipping AI analysis.");
             return;
         }
-        $('#ai-output').html(lang.starting_ai_analysis);
+        $('#ai-output').text(lang.starting_ai_analysis).show(); // Ensure AI output is visible and show initial message
+        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
+        $('#analysis-in-progress').show(); // Show progress bar for AI analysis
         console.log("Starting AI analysis request.");
 
         clearAiTaskState(); // Clear any previous AI task state
@@ -324,6 +344,7 @@ $(document).ready(function() {
         header += `---\n\n`; // Separator
         currentAiTask.header = header; // Store the constructed header
 
+        console.log("DEBUG: Preparing to make AJAX call to /analyze_results with key: '" + apiKey + "'"); // Tambahan untuk Debug
         $.ajax({
             url: '/analyze_results',
             type: 'POST',
@@ -335,19 +356,21 @@ $(document).ready(function() {
                     currentAiTask.taskId = response.task_id;
                     currentAiTask.startTime = Date.now();
                     currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
-                    $('#ai-output').text(`${lang.ai_analysis_in_progress} (${formatTime(0)})`);
                     console.log(`AI task started with ID: ${response.task_id}`);
                 } else if (response.error) {
-                     $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`);
+                     $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`).show();
+                     checkAndHideProgressBar();
                      console.error("Error starting AI task:", response.error);
                 } else {
                     // Use the stored header
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.analysis || "Tidak ada hasil analisis.")));
+                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
+                    checkAndHideProgressBar();
                     console.warn("AI analysis response without task_id or error.", response);
                 }
             },
             error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`);
+                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`).show();
+                checkAndHideProgressBar();
                 console.error("Failed to send AI analysis request.", xhr);
             }
         });
@@ -355,6 +378,7 @@ $(document).ready(function() {
 
     // --- Event Handlers for main analysis forms ---
     $('form.analysisForm').on('submit', function(event) {
+        console.log("Form analysisForm submitted.");
         event.preventDefault();
         if (currentTask.taskId) {
             alert(lang.task_already_running_wait_cancel);
@@ -365,6 +389,13 @@ $(document).ready(function() {
         const url = form.data('url');
         let data = {};
         form.serializeArray().forEach(item => { data[item.name] = item.value; });
+
+        // If it's the Nmap form and custom scan is selected, add custom fields
+        if (form.attr('id') === 'nmapForm' && data.scan_type === 'custom_scan') {
+            data.custom_ports = $('#nmap-custom-ports').val();
+            data.custom_args = $('#nmap-custom-args').val();
+        }
+
         if (form.hasClass('customAnalysisForm')) {
             data['tool_id'] = form.data('tool-id');
         }
@@ -382,12 +413,14 @@ $(document).ready(function() {
         currentTask.analysisMethod = analysisMethod;
         currentTask.analysisTarget = analysisTarget;
 
-        button.prop('disabled', true).find('.button-text').hide();
+        button.prop('disabled', true);
         button.find('.spinner-border').show();
-        $('#output-display').text(lang.starting_task);
-        $('#ai-output').text(lang.waiting_for_scan_results_ai);
+        $('#analysis-in-progress').show(); // Show loading animation
+        $('#analysis-in-progress strong').text(lang.starting_task);
+        $('#output-display').hide(); // Hide raw output display
+        $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
         $('#task-controls').show(); // Show task controls immediately
-        $('#cancel-button').prop('disabled', false).text('Cancel'); // Enable cancel button immediately
+        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel'); // Enable cancel button immediately
         console.log("Main analysis form submitted.", data);
 
         $.ajax({
@@ -401,17 +434,17 @@ $(document).ready(function() {
                     currentTask.taskId = response.task_id;
                     currentTask.startTime = Date.now();
                     $('#task-controls').show();
-                    $('#cancel-button').prop('disabled', false).text('Cancel');
+                    $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
                     currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, currentTask.analysisMethod, currentTask.analysisTarget), 2000);
                     console.log(`Main task started with ID: ${response.task_id}`);
                 } else {
-                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`);
+                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
                     console.error("Error starting main task:", response);
                     clearTaskState();
                 }
             },
             error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">Failed to start task: ${xhr.responseText}</span>`);
+                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`).show();
                 console.error("Failed to send main task request.", xhr);
                 clearTaskState();
             }
@@ -427,6 +460,15 @@ $(document).ready(function() {
     }
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         window.location.hash = e.target.hash;
+    });
+
+    // Nmap custom scan options visibility
+    $('input[name="scan_type"]').on('change', function() {
+        if ($(this).val() === 'custom_scan') {
+            $('#nmap-custom-options').slideDown();
+        } else {
+            $('#nmap-custom-options').slideUp();
+        }
     });
 });
 </script>
