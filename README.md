@@ -125,6 +125,25 @@ The application integrates a suite of well-known security tools to perform its a
 ### Containerization
 *   **Docker**: The application is fully containerized, ensuring a consistent and portable deployment environment.
 
+## Hardware Recommendations
+
+To ensure optimal performance and successful builds/deployments of netiV3, consider the following hardware specifications. These recommendations apply whether deploying via Docker, in a Virtual Machine (VM), or on a physical server.
+
+### Minimum Requirements
+
+*   **CPU:** 2 Cores
+*   **RAM:** 4 GB (especially important during Docker builds and when running multiple scanning tools)
+*   **Disk Space:** 20 GB (minimum, with at least 10 GB free for Docker build cache and Nuclei templates. Docker builds, especially with Go tools and large template updates, can consume significant temporary disk space.)
+
+### Recommended Specifications
+
+*   **CPU:** 4 Cores or more
+*   **RAM:** 8 GB or more
+*   **Disk Space:** 50 GB or more (for long-term use, logs, and additional tools/data)
+
+**Note on Disk Space for Docker Builds:**
+Docker builds, particularly those involving Go compilers and large template downloads (like Nuclei templates), can temporarily consume substantial disk space. If you encounter "No space left on device" errors during a Docker build, consider running `docker system prune -a` to clear unused Docker objects (images, containers, volumes, and build cache) before retrying the build.
+
 ## Troubleshooting
 
 *   **Docker Logs**: To see the application logs when running with Docker, use the command: `docker logs netiv3-prod -f`
