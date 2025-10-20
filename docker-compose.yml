@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  netiv3:
+    build: .
+    container_name: netiv3
+    restart: unless-stopped
+    ports:
+      - "5004:5004"
+    environment:
+      - SECRET_KEY=ganti-dengan-secret-key-yang-aman
+
