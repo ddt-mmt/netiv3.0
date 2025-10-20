@@ -1,7 +1,9 @@
 version: '3.8'
 
 services:
+  # Layanan utama netiV3
   netiv3:
+    # Mendefinisikan nama image secara eksplisit untuk Portainer
     image: netiv3:latest 
     build: 
       context: .
@@ -11,9 +13,13 @@ services:
     ports:
       - "5004:5004"
     
+    # BLOK ENVIRONMENT YANG BERSIH TANPA KOMENTAR DI BARIS NILAI
+    # Ganti nilai di bawah ini dengan kunci rahasia dan API Anda
     environment:
       - SECRET_KEY=YOUR_PRODUCTION_SECRET_KEY_HERE
       - GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
       - MSF_RPC_HOST=10.28.14.20 
       - MSF_RPC_PORT=55553
       - MSF_RPC_PASSWORD=netiv3pass
+
+# Anda dapat menambahkan jaringan atau volume di sini jika diperlukan.
