@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   netiv3:
-    # Secara eksplisit beri nama image hasil build
-    image: netiv3:latest  
+    # ✨ TAMBAHKAN BARIS INI!
+    image: netiv3:latest 
     build: .
+    ports:
+      - "5004:5004"
     # ... konfigurasi lainnya ...
