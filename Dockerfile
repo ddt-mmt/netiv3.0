@@ -17,8 +17,18 @@ RUN apt-get update && apt-get install -y iputils-ping nmap dnsutils dsniff trace
     ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the application code
-COPY . .
+# 6. Salin kode aplikasi lainnya
+# Pastikan Anda menyalin kode aplikasi Flask Anda di sini
+COPY app/ app/
+COPY run.py .
+COPY config.py .
+COPY custom_tools.json .
+COPY list_models.py .
+COPY pentest.py .
+COPY project_netV3.0.txt .
+COPY TUTORIAL_IDOR.md .
+COPY LICENSE .
+COPY .cifs_credentials .
 
 # Expose the port the app runs on
 EXPOSE 5004
