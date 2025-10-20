@@ -1,37 +1,36 @@
-# Use an official lightweight Python image
+# =======================================================
+# STAGE 2: FINAL
+# Image production yang kecil
+# =======================================================
 FROM python:3.13-slim
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the dependencies file first to leverage Docker cache
+# 1. Instal semua tools runtime yang tersisa (Nmap, Perl, dll.)
+# Lakukan UPDATE dan INSTALL terpisah untuk meminimalkan kegagalan
+RUN apt-get update
+RUN apt-get install -y \
+    iputils-ping \
+    nmap \
+    dnsutils \
+    dsniff \
+    traceroute \
+    perl \
+    liberror-perl \
+    && rm -rf /var/lib/apt/lists/*
+    
+# 2. Instal dependencies Python
+# Dipisahkan untuk debugging yang lebih mudah jika ada masalah pip
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies
-RUN apt-get update && apt-get install -y iputils-ping nmap dnsutils dsniff traceroute golang-go git perl && \
-    pip install --no-cache-dir -r requirements.txt && \
-    go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest && \
-    mv /root/go/bin/nuclei /usr/local/bin/ && \
-    nuclei -update-templates && \
-    git clone https://github.com/sullo/nikto.git /opt/nikto && \
-    ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto && \
-    rm -rf /var/lib/apt/lists/*
+# 3. Salin binari dan tools dari Stage 1 (Builder)
+COPY --from=builder /root/go/bin/nuclei /usr/local/bin/
+COPY --from=builder /root/.config/nuclei/templates /root/.config/nuclei/templates/
+COPY --from=builder /opt/nikto /opt/nikto
+RUN ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto
 
-# 6. Salin kode aplikasi lainnya
-# Pastikan Anda menyalin kode aplikasi Flask Anda di sini
-COPY app/ app/
-COPY run.py .
-COPY config.py .
-COPY custom_tools.json .
-COPY list_models.py .
-COPY pentest.py .
-COPY project_netV3.0.txt .
-COPY TUTORIAL_IDOR.md .
-COPY LICENSE .
+# 4. Salin kode aplikasi lainnya
+COPY . .
 
-# Expose the port the app runs on
-EXPOSE 5004
-
-# Command to run the application using Gunicorn for production
-ENV FLASK_APP app
-CMD ["gunicorn", "--bind", "0.0.0.0:5004", "run:app"]
+# CMD dan ENV lainnya...
