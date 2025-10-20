@@ -28,7 +28,6 @@ COPY pentest.py .
 COPY project_netV3.0.txt .
 COPY TUTORIAL_IDOR.md .
 COPY LICENSE .
-COPY .cifs_credentials .
 
 # Expose the port the app runs on
 EXPOSE 5004
