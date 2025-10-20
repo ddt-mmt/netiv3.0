@@ -84,10 +84,46 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
     ```
 
 ## Core Features
-(Content unchanged)
 
-## Available Gemini Models
-(Content unchanged)
+*   **Network Scanning**: Perform various network scans like Ping, Traceroute, NSLookup, and Nmap scans (including custom scans).
+*   **Web & Domain Analysis**: Enumerate subdomains, analyze email security, and crawl websites for endpoints.
+*   **Vulnerability Scanning**: Run Nikto scans, XXE scans, and Nuclei scans against web targets.
+*   **IDOR Testing**: A dedicated interface to test for Insecure Direct Object Reference vulnerabilities.
+*   **Metasploit Integration**: Search for Metasploit modules, view module details, and execute exploits.
+*   **AI-Powered Analysis**: Analyze scan results and generate reports using Google Gemini.
+*   **AI Payload Generation**: Generate security payloads with the help of Google Gemini.
+*   **Asynchronous Tasks**: All scans and long-running tasks are executed asynchronously in the background.
+
+## Core Technologies & Tools
+
+This project is built with a variety of powerful open-source tools and technologies.
+
+### Backend & Framework
+*   **Python**: The core language for the backend logic.
+*   **Flask**: A lightweight web framework for Python.
+*   **Gunicorn**: A robust WSGI HTTP server for running the Flask application in production.
+
+### AI Integration
+*   **Google Gemini**: The project leverages the `gemini-pro-latest` model via the `google-generativeai` Python library for:
+    *   **AI-Powered Analysis**: Analyzing raw scan results to generate comprehensive security reports.
+    *   **Security Payload Generation**: Assisting pentesters by generating payloads based on vulnerability descriptions.
+
+### Scanning & Pentesting Tools
+The application integrates a suite of well-known security tools to perform its analysis:
+*   **Nmap**: For network discovery and security auditing.
+*   **Nikto**: A web server scanner which performs comprehensive tests against web servers for multiple items.
+*   **Sublist3r**: For enumerating subdomains of websites.
+*   **Nuclei**: A fast and customizable vulnerability scanner.
+*   **Metasploit**: For exploit searching and execution.
+*   **dsniff (arpspoof, dnsspoof)**: For DNS spoofing exercises.
+*   **dnsutils (dig)**: For DNS queries.
+
+### Frontend
+*   **HTML/CSS/JavaScript**: The standard trio for the web interface.
+*   **jQuery & Bootstrap**: For responsive design and simplified DOM manipulation.
+
+### Containerization
+*   **Docker**: The application is fully containerized, ensuring a consistent and portable deployment environment.
 
 ## Troubleshooting
 

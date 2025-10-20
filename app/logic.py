@@ -24,6 +24,7 @@ def create_task(target_function, *args, **kwargs):
     Creates and starts a background task, returning its ID.
     """
     task_id = str(uuid.uuid4())
+    print(f"[create_task] Creating task {task_id} for function {target_function.__name__}", flush=True)
     tasks[task_id] = {
         'status': 'pending',
         'start_time': time.time(),
@@ -35,6 +36,7 @@ def create_task(target_function, *args, **kwargs):
     thread = threading.Thread(target=target_function, args=(task_id,) + args, kwargs=kwargs)
     thread.daemon = True  # Allows main program to exit even if threads are running
     thread.start()
+    print(f"[create_task] Task {task_id} started.", flush=True)
     return task_id
 
 def get_task_status(task_id):
@@ -95,6 +97,8 @@ def run_command_worker(task_id, command):
         task = tasks[task_id]
         task['status'] = 'running'
         
+        print(f"[run_command_worker] Task {task_id}: Executing command: {' '.join(command)}", flush=True)
+
         # Using Popen for non-blocking execution and os.setsid to create a new process group
         # This allows us to kill the process and all its children reliably.
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, preexec_fn=os.setsid)
@@ -132,6 +136,7 @@ def perform_ping_scan_worker(task_id, target):
 
 def perform_ping_scan(target):
     """Starts a background ping scan task."""
+    print(f"[perform_ping_scan] Starting ping scan for target: {target}", flush=True)
     return create_task(perform_ping_scan_worker, target)
 
 def perform_traceroute_scan_worker(task_id, target):
@@ -265,7 +270,7 @@ def run_domain_scan_worker(task_id, target_domain, scan_type):
         
         if scan_type == 'subdomain_enum':
             # Path to the sublist3r executable within the virtual environment
-            sublist3r_path = '/usr/lib/gemini-cli/netiv3/netiV3/venv/bin/sublist3r'
+            sublist3r_path = 'sublist3r'
             
             # Command to execute sublist3r and save the output to a temporary file
             # We use -o to control the output and avoid parsing noisy stdout
@@ -904,7 +909,7 @@ def run_custom_scan(command_template, target):
 def run_nuclei_scan_worker(task_id, target_url, scan_type):
     """Worker that executes the Nuclei scan."""
     try:
-        nuclei_path = '/usr/lib/gemini-cli/netiv3/netiV3/venv/bin/nuclei'
+        nuclei_path = 'nuclei'
         
         # Base command for nuclei
         command = [nuclei_path, '-u', shlex.quote(target_url)]

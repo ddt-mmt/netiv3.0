@@ -170,8 +170,9 @@ $(document).ready(function() {
             type: 'GET',
             success: function(response) {
                 if (response.status === 'completed') {
-                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget); // Trigger AI analysis after main task completes
-                    $('#output-display').hide(); // Hide raw output display on successful completion
+                    var resultText = response.result.stdout || "";
+                    $('#output-display').text(resultText).show(); // Show raw output
+                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
                     clearTaskState();
                 } else if (response.status === 'error') {
                     const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;

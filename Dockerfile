@@ -8,7 +8,14 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y iputils-ping nmap dnsutils dsniff traceroute golang-go git perl && \
+    pip install --no-cache-dir -r requirements.txt && \
+    go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest && \
+    mv /root/go/bin/nuclei /usr/local/bin/ && \
+    nuclei -update-templates && \
+    git clone https://github.com/sullo/nikto.git /opt/nikto && \
+    ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of the application code
 COPY . .
@@ -17,4 +24,5 @@ COPY . .
 EXPOSE 5004
 
 # Command to run the application using Gunicorn for production
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5004", "app:create_app()"]
+ENV FLASK_APP app
+CMD ["gunicorn", "--bind", "0.0.0.0:5004", "run:app"]

@@ -164,13 +164,17 @@ def net_analysis_page():
 @bp.route('/run_ping', methods=['POST'])
 def run_ping():
     try:
+        print("[/run_ping] Route hit.")
         data = request.json
         target = data.get('target')
+        print(f"[/run_ping] Target: {target}")
         if not target:
             return jsonify({'error': 'Target cannot be empty'}), 400
         task_id = perform_ping_scan(target)
+        print(f"[/run_ping] Task ID: {task_id}")
         return jsonify({'task_id': task_id}), 202
     except Exception as e:
+        print(f"[/run_ping] Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/run_traceroute', methods=['POST'])

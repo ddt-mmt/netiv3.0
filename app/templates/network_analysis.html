@@ -187,8 +187,10 @@
 
 {% block scripts %}
 <script>
+    console.log("Script tag is being executed.");
     const lang = {{ lang | tojson }};
 $(document).ready(function() {
+    console.log("Document is ready.");
     // --- State Management ---
     let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
     let currentAiTask = { intervalId: null, taskId: null, startTime: null }; // New state for AI task
@@ -234,8 +236,9 @@ $(document).ready(function() {
             type: 'GET',
             success: function(response) {
                 if (response.status === 'completed') {
-                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget); // Trigger AI analysis after main task completes
-                    $('#output-display').hide(); // Hide raw output display on successful completion
+                    var resultText = response.result.stdout || "";
+                    $('#output-display').text(resultText).show(); // Show raw output
+                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
                     clearTaskState();
                 } else if (response.status === 'error') {
                     const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
@@ -246,9 +249,8 @@ $(document).ready(function() {
                     clearTaskState();
                 }
             },
-            error: function(xhr) {
-                stopHackingAnimation();
-                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`).show();
+            error: function(xhr, status, error) {
+                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${error}</span>`).show();
                 clearTaskState();
             }
         });
@@ -339,10 +341,9 @@ $(document).ready(function() {
         header += `**Tanggal & Waktu:** ${new Date().toLocaleString()}\n`;
         if (analysisMethod) header += `**Metode:** ${analysisMethod}\n`;
         if (analysisTarget) header += `**Target:** ${analysisTarget}\n\n`;
-        header += `---\n\n`; // Separator
-        currentAiTask.header = header; // Store the constructed header
+        header += `---`;
+        currentAiTask.header = header;
 
-        console.log("DEBUG: Preparing to make AJAX call to /analyze_results with key: '" + apiKey + "'"); // Tambahan untuk Debug
         $.ajax({
             url: '/analyze_results',
             type: 'POST',
@@ -388,7 +389,6 @@ $(document).ready(function() {
         let data = {};
         form.serializeArray().forEach(item => { data[item.name] = item.value; });
 
-        // If it's the Nmap form and custom scan is selected, add custom fields
         if (form.attr('id') === 'nmapForm' && data.scan_type === 'custom_scan') {
             data.custom_ports = $('#nmap-custom-ports').val();
             data.custom_args = $('#nmap-custom-args').val();
@@ -398,13 +398,12 @@ $(document).ready(function() {
             data['tool_id'] = form.data('tool-id');
         }
 
-        // Capture analysis details
         const activeTabId = $('#netAnalysisTab .nav-link.active').attr('id');
         let analysisMethod = $('#' + activeTabId).text().trim();
         if (form.hasClass('customAnalysisForm')) {
             analysisMethod = form.find('button[type="submit"]').text().replace('Run ', '').trim();
         }
-        const analysisTarget = data.target || data.target_domain || data.victim_ip; // Handle different target names
+        const analysisTarget = data.target || data.target_domain || data.victim_ip;
 
         currentTask.submitButton = button;
         currentTask.analysisTitle = "Net Analysis";
@@ -413,37 +412,35 @@ $(document).ready(function() {
 
         button.prop('disabled', true);
         button.find('.spinner-border').show();
-        $('#analysis-in-progress').show(); // Show loading animation
+        $('#analysis-in-progress').show();
         $('#analysis-in-progress strong').text(lang.starting_task);
-        $('#output-display').hide(); // Hide raw output display
+        $('#output-display').hide();
         $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
-        $('#task-controls').show(); // Show task controls immediately
-        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel'); // Enable cancel button immediately
-        console.log("Main analysis form submitted.", data);
-
+        $('#task-controls').show();
+        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+        
+        console.log("Sending AJAX request to:", url, "with data:", data);
         $.ajax({
             url: url,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
-                console.log("Main task initial response:", response);
+                console.log("AJAX success:", response);
                 if (response.task_id) {
                     currentTask.taskId = response.task_id;
                     currentTask.startTime = Date.now();
-                    $('#task-controls').show();
-                    $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
                     currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, currentTask.analysisMethod, currentTask.analysisTarget), 2000);
-                    console.log(`Main task started with ID: ${response.task_id}`);
                 } else {
                     $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
-                    console.error("Error starting main task:", response);
                     clearTaskState();
                 }
             },
-            error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`).show();
-                console.error("Failed to send main task request.", xhr);
+            error: function(xhr, status, error) {
+                const errorMsg = `AJAX failed. Status: ${status}, Error: ${error}, Response: ${xhr.responseText}`;
+                console.error(errorMsg);
+                alert(errorMsg); // Show error in an alert
+                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${status} - ${error}</span>`).show();
                 clearTaskState();
             }
         });
@@ -451,7 +448,6 @@ $(document).ready(function() {
 
     $('#cancel-button').on('click', cancelCurrentTask);
 
-    // Bootstrap 4 tab activation
     var hash = window.location.hash;
     if (hash) {
         $('#netAnalysisTab a[href="' + hash + '"]').tab('show');
@@ -460,7 +456,6 @@ $(document).ready(function() {
         window.location.hash = e.target.hash;
     });
 
-    // Nmap custom scan options visibility
     $('input[name="scan_type"]').on('change', function() {
         if ($(this).val() === 'custom_scan') {
             $('#nmap-custom-options').slideDown();
