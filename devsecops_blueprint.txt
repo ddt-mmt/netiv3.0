@@ -1,0 +1,67 @@
+=========================================
+Blueprint: Automated DevSecOps Pipeline
+=========================================
+
+This document outlines the architecture for a real-time, automated security scanning and remediation pipeline. The goal is to automatically detect, fix, and verify security vulnerabilities in a codebase.
+
+---
+### Core Components & Workflow
+---
+
+The system is composed of several integrated tools, orchestrated by a CI/CD platform. The workflow is triggered on every code change pushed to the repository.
+
+**1. CI/CD Platform (The Orchestrator)**
+   - **Tool:** GitHub Actions
+   - **Role:** Acts as the brain of the operation. It manages the entire workflow defined in a YAML file (e.g., `.github/workflows/security_scan.yml`).
+   - **Trigger:** Automatically runs on every `git push` or `pull_request`.
+
+**2. Security Scanners (The Analysts)**
+   - **Tool(s):** Semgrep (SAST), Gitleaks (Secret Scanning), Trivy (SCA & IaC).
+   - **Role:** These tools are executed by the CI/CD pipeline to scan the codebase for different types of vulnerabilities. They are configured to output their findings in a machine-readable format like JSON or SARIF.
+
+**3. Custom Remediation Bot (The Mechanic)**
+   - **This is the core application to be built.** It is a backend service that runs on a server (e.g., in a Docker container).
+   - **Role:**
+     a. **Receives Scan Data:** It provides an API endpoint that the CI/CD pipeline calls, sending the JSON/SARIF results from the scanners.
+     b. **Generates Fixes:**
+        - For simple, pattern-based issues, it uses code manipulation libraries (e.g., Python's `ast` module) to apply a fix.
+        - For complex issues, it queries a Large Language Model (LLM) like Gemini, providing the vulnerable code and the scanner's description to get a suggested patch.
+     c. **Triggers Verification:** After generating a patch, it uses the CI/CD platform's API to trigger a new workflow for testing.
+
+**4. Automated Testing Framework (The Quality Gate)**
+   - **Tool:** The project's existing test suite (e.g., Pytest).
+   - **Role:** The Remediation Bot triggers a test run on the patched code. This is a critical step to ensure the automated fix has not introduced any functional regressions (i.e., broken the application). The security scan is also re-run to confirm the vulnerability is gone.
+
+**5. Git Platform API (The Communicator)**
+   - **Tool:** GitHub REST API.
+   - **Role:** If the patched code passes all tests, the Remediation Bot uses the GitHub API to:
+     a. Create a new branch.
+     b. Commit the changes.
+     c. Open a new Pull Request with the fix, a description of the vulnerability, and a link to the successful test run.
+
+---
+### High-Level Workflow Diagram
+---
+
+(Developer) -> git push -> [GitHub]
+                               |
+                               V
+[1. GitHub Actions]      -> Triggers Workflow
+   - Checkout Code
+   - Run [2. Scanners] (Semgrep, etc.)
+   - If findings: POST results to [3. Remediation Bot]
+                               |
+                               V
+[3. Remediation Bot]     -> Analyzes results
+   - Generates patch (using rules or LLM)
+   - Triggers test workflow
+                               |
+                               V
+[1. GitHub Actions]      -> Runs [4. Pytest] on patched code
+   - If tests pass: Notify Bot
+                               |
+                               V
+[3. Remediation Bot]     -> Uses [5. GitHub API] to create Pull Request
+                               |
+                               V
+[GitHub]                 -> (Developer) reviews and merges the automated PR.
