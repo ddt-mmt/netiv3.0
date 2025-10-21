@@ -65,6 +65,7 @@
                 <!-- Subdomain Tab -->
                 <div class="tab-pane fade" id="subdomain" role="tabpanel">
                     <p>{{ lang.subdomain_description }}</p>
+                    <div class="alert alert-info">{{ lang.subdomain_duration_warning | default('Note: Subdomain enumeration against a large domain can be a very time-consuming process.') }}</div>
                     <form class="analysisForm" data-url="/scan">
                         <div class="mb-3">
                             <label class="form-label">{{ lang.target_domain_label }}</label>
@@ -237,7 +238,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === 'completed') {
                     var resultText = response.result.stdout || "";
-                    $('#output-display').text(resultText).show(); // Show raw output
+                    // Raw scan data is no longer shown on the UI for successful scans.
                     runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
                     clearTaskState();
                 } else if (response.status === 'error') {

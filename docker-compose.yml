@@ -10,6 +10,8 @@ services:
       dockerfile: Dockerfile
     container_name: netiv3_app
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "5004:5004"
     

@@ -96,6 +96,7 @@
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="intense_scan"><label class="form-check-label"><strong>{{ lang.intense_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.intense_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_intense_scan_warning }}</small></label></div>
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="udp_scan"><label class="form-check-label"><strong>{{ lang.udp_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.udp_scan_description }}</small></label></div>
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="vuln_scan"><label class="form-check-label"><strong>{{ lang.vuln_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.vuln_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_vuln_scan_warning }}</small></label></div>
+                        <div class="alert alert-info mt-3">{{ lang.nmap_duration_warning | default('Note: Intense and Vulnerability scans can take a significant amount of time (potentially hours) depending on the target.') }}</div>
                         <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="ssh_audit"><label class="form-check-label"><strong>{{ lang.ssh_security_audit_title }}</strong><small class="form-text text-muted d-block">{{ lang.ssh_security_audit_description }}</small></label></div>
                         
                         <!-- Custom Scan Option -->
@@ -237,7 +238,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === 'completed') {
                     var resultText = response.result.stdout || "";
-                    $('#output-display').text(resultText).show(); // Show raw output
+                    // Raw scan data is no longer shown on the UI for successful scans.
                     runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
                     clearTaskState();
                 } else if (response.status === 'error') {

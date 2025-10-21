@@ -1,0 +1,415 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.code_app_scanners_title | default('Code & Application Scanners') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-code-branch"></i> {{ lang.code_app_scanners_heading | default('Code & Application Security Scanners') }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
+                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}">
+            </div>
+            <hr>
+
+            <ul class="nav nav-tabs" id="scannerTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="gitleaks-tab" data-toggle="tab" href="#gitleaks" role="tab" aria-controls="gitleaks" aria-selected="true">{{ lang.gitleaks_scan_card_title | default('Gitleaks Scan') }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="semgrep-tab" data-toggle="tab" href="#semgrep" role="tab" aria-controls="semgrep" aria-selected="false">{{ lang.semgrep_scan_card_title | default('Semgrep SAST') }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="zap-tab" data-toggle="tab" href="#zap" role="tab" aria-controls="zap" aria-selected="false">{{ lang.zap_scan_card_title | default('OWASP ZAP DAST') }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="trivy-sca-tab" data-toggle="tab" href="#trivy-sca" role="tab" aria-controls="trivy-sca" aria-selected="false">{{ lang.trivy_sca_card_title | default('Trivy SCA') }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="trivy-image-tab" data-toggle="tab" href="#trivy-image" role="tab" aria-controls="trivy-image" aria-selected="false">{{ lang.trivy_image_scan_card_title | default('Trivy Image Scan') }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="trivy-iac-tab" data-toggle="tab" href="#trivy-iac" role="tab" aria-controls="trivy-iac" aria-selected="false">{{ lang.trivy_iac_scan_card_title | default('Trivy IaC Scan') }}</a>
+                </li>
+            </ul>
+
+            <div class="tab-content pt-3" id="scannerTabsContent">
+                <div class="tab-pane fade show active" id="gitleaks" role="tabpanel" aria-labelledby="gitleaks-tab">
+                    <!-- Gitleaks Scan Content -->
+                    <p class="card-text">{{ lang.gitleaks_scan_description }}</p>
+                    <form class="analysisForm" data-url="/gitleaks_scan">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.gitleaks_repo_url_label }}</label>
+                            <input type="text" class="form-control" name="repo_url" placeholder="{{ lang.gitleaks_repo_url_placeholder }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ lang.gitleaks_scan_button }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="semgrep" role="tabpanel" aria-labelledby="semgrep-tab">
+                    <!-- Semgrep Scan Content -->
+                    <p class="card-text">{{ lang.semgrep_scan_description }}</p>
+                    <form class="analysisForm" data-url="/semgrep_scan">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.semgrep_repo_url_label }}</label>
+                            <input type="text" class="form-control" name="target_path" placeholder="{{ lang.semgrep_repo_url_placeholder }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.semgrep_config_label | default('Semgrep Config') }}</label>
+                            <input type="text" class="form-control" name="config_url" value="auto" placeholder="{{ lang.semgrep_config_placeholder | default('e.g., auto or p/security-audit') }}">
+                            <small class="form-text text-muted">{{ lang.semgrep_config_description | default('Semgrep rules to use (e.g., auto, p/security-audit).') }}</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ lang.semgrep_scan_button }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="zap" role="tabpanel" aria-labelledby="zap-tab">
+                    <!-- ZAP Scan Content -->
+                    <p class="card-text">{{ lang.zap_scan_description }}</p>
+                    <div class="alert alert-danger">{{ lang.zap_scan_warning | default('⚠️ Warning: ZAP is an active, aggressive scanner. Only run against applications you have explicit permission to test.') }}</div>
+                    <div class="alert alert-info">{{ lang.zap_duration_warning | default('Note: A full ZAP scan on a large application can take several hours to complete.') }}</div>
+                    <form class="analysisForm" data-url="/zap_scan">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.zap_target_url_label }}</label>
+                            <input type="url" class="form-control" name="target_url" placeholder="{{ lang.zap_target_url_placeholder }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ lang.zap_scan_button }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="trivy-sca" role="tabpanel" aria-labelledby="trivy-sca-tab">
+                    <!-- Trivy SCA Content -->
+                    <p class="card-text">{{ lang.trivy_sca_description }}</p>
+                    <form class="analysisForm" data-url="/trivy_sca">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.trivy_sca_path_label }}</label>
+                            <input type="text" class="form-control" name="target_path" placeholder="{{ lang.trivy_sca_path_placeholder }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ lang.trivy_sca_scan_button }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="trivy-image" role="tabpanel" aria-labelledby="trivy-image-tab">
+                    <!-- Trivy Image Scan Content -->
+                    <p class="card-text">{{ lang.trivy_image_scan_description }}</p>
+                    <form class="analysisForm" data-url="/trivy_image_scan">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.trivy_image_scan_image_name_label }}</label>
+                            <input type="text" class="form-control" name="image_name" placeholder="{{ lang.trivy_image_scan_image_name_placeholder }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ lang.trivy_image_scan_button }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="trivy-iac" role="tabpanel" aria-labelledby="trivy-iac-tab">
+                    <!-- Trivy IaC Scan Content -->
+                    <p class="card-text">{{ lang.trivy_iac_scan_description }}</p>
+                    <form class="analysisForm" data-url="/trivy_iac_scan">
+                        <div class="mb-3">
+                            <label class="form-label">{{ lang.trivy_iac_scan_path_label }}</label>
+                            <input type="text" class="form-control" name="target_path" placeholder="{{ lang.trivy_iac_scan_path_placeholder }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            {{ lang.trivy_iac_scan_button }}
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Area -->
+            <div id="results-area" class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
+                    <div id="task-controls" style="display: none;">
+                        <span id="task-timer" class="me-3">00:00</span>
+                        <button id="cancel-button" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
+                        <div id="analysis-in-progress" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <strong>{{ lang.processing_message }}</strong>
+                            </div>
+                            <div class="progress mt-2">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div id="ai-output-area">
+                            <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
+                            <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    const lang = {{ lang | tojson }};
+    $(document).ready(function() {
+        // --- State Management ---
+        let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+        let currentAiTask = { intervalId: null, taskId: null, startTime: null };
+
+        function clearTaskState() {
+            if (currentTask.intervalId) clearInterval(currentTask.intervalId);
+            if (currentTask.submitButton) {
+                const button = $(currentTask.submitButton);
+                button.prop('disabled', false).find('.button-text').show();
+                button.find('.spinner-border').hide();
+            }
+            $('#task-controls').hide(); // Hide task controls when main task is done
+            currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+            checkAndHideProgressBar();
+        }
+
+        function clearAiTaskState() {
+            if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
+            currentAiTask = { intervalId: null, taskId: null, startTime: null };
+            checkAndHideProgressBar();
+        }
+
+        function checkAndHideProgressBar() {
+            if (!currentTask.taskId && !currentAiTask.taskId) {
+                $('#analysis-in-progress').hide();
+            }
+        }
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const sec = (seconds % 60).toString().padStart(2, '0');
+            return `${min}:${sec}`;
+        }
+
+        // --- API Communication ---
+        function pollTaskStatus(taskId, analysisTitle, analysisMethod, analysisTarget) {
+            const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
+            $('#task-timer').text(formatTime(elapsedTime));
+            $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
+
+            $.ajax({
+                url: `/task/status/${taskId}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'completed') {
+                        var resultText = response.result.stdout || "";
+                        // Raw scan data is no longer shown on the UI for successful scans.
+                        // It is passed directly to the AI analysis function.
+                        runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
+                        clearTaskState();
+                    } else if (response.status === 'error') {
+                        const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
+                        $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
+                        clearTaskState();
+                    } else if (response.status === 'cancelled') {
+                        $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
+                        clearTaskState();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${error}</span>`).show();
+                    clearTaskState();
+                }
+            });
+        }
+
+        function pollAiTaskStatus() {
+            if (!currentAiTask.taskId) return;
+
+            const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
+            $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
+
+            $.ajax({
+                url: `/task/status/${currentAiTask.taskId}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'completed') {
+                        $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
+                        clearAiTaskState();
+                    } else if (response.status === 'error') {
+                        const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
+                        $('#ai-output').html(`<span class="text-danger">Error AI: ${errorText}</span>`);
+                        clearAiTaskState();
+                    } else if (response.status === 'cancelled') {
+                        $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
+                        clearAiTaskState();
+                    }
+                },
+                error: function(xhr) {
+                    $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status} ${xhr.responseText}</span>`);
+                    clearAiTaskState();
+                }
+            });
+        }
+
+        function cancelCurrentTask() {
+            let tasksToCancel = [];
+            if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
+            if (currentAiTask.taskId) tasksToCancel.push(currentAiTask.taskId);
+
+            if (tasksToCancel.length > 0) {
+                $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
+                $('#analysis-in-progress strong').text(lang.cancelling_message);
+
+                let cancelPromises = tasksToCancel.map(taskId => {
+                    return $.ajax({
+                        url: `/task/cancel/${taskId}`,
+                        type: 'POST'
+                    }).fail(function(xhr) {
+                        console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
+                    });
+                });
+
+                $.when(...cancelPromises).always(function() {
+                    $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+                });
+            } else {
+                alert(lang.no_running_tasks_to_cancel);
+            }
+        }
+
+        function runAiAnalysis(rawResults, analysisTitle, analysisMethod, analysisTarget) {
+            const apiKey = $('#apiKey').val();
+            if (!apiKey) {
+                $('#ai-output').html(`<span class="text-warning">${lang.ai_key_not_entered_ai_skipped}</span>`);
+                return;
+            }
+            $('#ai-output').text(lang.starting_ai_analysis).show();
+            $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
+            $('#analysis-in-progress').show();
+
+            clearAiTaskState();
+
+            let header = `### ${analysisTitle || lang.ai_analysis_title}\n\n`;
+            header += `**Tanggal & Waktu:** ${new Date().toLocaleString()}\n`;
+            if (analysisMethod) header += `**Metode:** ${analysisMethod}\n`;
+            if (analysisTarget) header += `**Target:** ${analysisTarget}\n\n`;
+            header += `---`;
+            currentAiTask.header = header;
+
+            $.ajax({
+                url: '/analyze_results',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ api_key: apiKey, results: rawResults, language: '{{ lang_code }}' }),
+                success: function(response) {
+                    if (response.task_id) {
+                        currentAiTask.taskId = response.task_id;
+                        currentAiTask.startTime = Date.now();
+                        currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
+                    } else if (response.error) {
+                        $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`).show();
+                        checkAndHideProgressBar();
+                    } else {
+                        $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
+                        checkAndHideProgressBar();
+                    }
+                },
+                error: function(xhr) {
+                    $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`).show();
+                    checkAndHideProgressBar();
+                }
+            });
+        }
+
+        // --- Event Handlers for main analysis forms ---
+        $('form.analysisForm').on('submit', function(event) {
+            event.preventDefault();
+            if (currentTask.taskId) {
+                alert(lang.task_already_running_wait_cancel);
+                return;
+            }
+            const form = $(this);
+            const button = form.find('button[type="submit"]');
+            const url = form.data('url');
+            let data = {};
+            form.serializeArray().forEach(item => { data[item.name] = item.value; });
+
+            currentTask.submitButton = button;
+            currentTask.analysisTitle = lang.code_app_scanners_heading || 'Code & Application Security Scanners';
+            
+            // Determine analysisMethod and analysisTarget based on the active tab and form data
+            const activeTabId = $('#scannerTabs .nav-link.active').attr('id');
+            let analysisMethod = $(`#${activeTabId}`).text().trim(); // e.g., "Gitleaks Scan"
+            let analysisTarget = data.repo_url || data.target_path || data.image_name || data.target_url;
+
+            button.prop('disabled', true);
+            button.find('.spinner-border').show();
+            $('#analysis-in-progress').show();
+            $('#analysis-in-progress strong').text(lang.starting_task);
+            $('#output-display').hide();
+            $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
+            $('#task-controls').show();
+            $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                contentType: 'application/x-www-form-urlencoded', // Forms submit as urlencoded
+                data: data, // Send as object, jQuery will serialize
+                success: function(response) {
+                    if (response.task_id) {
+                        currentTask.taskId = response.task_id;
+                        currentTask.startTime = Date.now();
+                        currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, analysisMethod, analysisTarget), 2000);
+                    } else {
+                        $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
+                        clearTaskState();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = `AJAX failed. Status: ${status}, Error: ${error}, Response: ${xhr.responseText}`;
+                    alert(errorMsg);
+                    $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${status} - ${error}</span>`).show();
+                    clearTaskState();
+                }
+            });
+        });
+
+        $('#cancel-button').on('click', cancelCurrentTask);
+
+        // Activate Bootstrap tabs
+        $('#scannerTabs a').on('click', function (e) {
+            e.preventDefault()
+            $(this).tab('show')
+        })
+
+        // Handle URL hash for tabs
+        var hash = window.location.hash;
+        if (hash) {
+            $('#scannerTabs a[href="' + hash + '"]').tab('show');
+        }
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            window.location.hash = e.target.hash;
+        });
+    });
+</script>
+{% endblock %}

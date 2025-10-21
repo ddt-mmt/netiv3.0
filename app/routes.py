@@ -27,6 +27,11 @@ from app.logic import (
     get_task_status, # <-- Import new function
     cancel_task      # <-- Import new function
 )
+from app.trivy_scanner import run_trivy_sca
+from app.gitleaks_scanner import run_gitleaks_scan
+from app.semgrep_scanner import run_semgrep_scan
+from app.zap_scanner import run_zap_scan
+from app.trivy_advanced_scanner import run_trivy_image_scan, run_trivy_iac_scan
 
 bp = Blueprint('main', __name__)
 
@@ -153,6 +158,83 @@ def run_api_scan_route():
         return jsonify({'result': 'API scan placeholder: Task would run here.'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/trivy_sca', methods=['GET', 'POST'])
+def trivy_sca_page():
+    if request.method == 'POST':
+        target_path = request.form.get('target_path')
+        if not target_path:
+            return jsonify({'error': 'Target path cannot be empty'}), 400
+        
+        task_id = run_trivy_sca(target_path)
+        return jsonify({'task_id': task_id}), 202
+    
+    return render_template('trivy_sca.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/gitleaks_scan', methods=['GET', 'POST'])
+def gitleaks_scan_page():
+    if request.method == 'POST':
+        repo_url = request.form.get('repo_url')
+        if not repo_url:
+            return jsonify({'error': 'Repository URL cannot be empty'}), 400
+        
+        task_id = run_gitleaks_scan(repo_url)
+        return jsonify({'task_id': task_id}), 202
+    
+    return render_template('gitleaks_scan.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/semgrep_scan', methods=['GET', 'POST'])
+def semgrep_scan_page():
+    if request.method == 'POST':
+        target_path = request.form.get('target_path')
+        config_url = request.form.get('config_url', 'auto') # Default to 'auto'
+        if not target_path:
+            return jsonify({'error': 'Target path (repository URL or local path) cannot be empty'}), 400
+        
+        task_id = run_semgrep_scan(target_path, config_url)
+        return jsonify({'task_id': task_id}), 202
+    
+    return render_template('semgrep_scan.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/zap_scan', methods=['GET', 'POST'])
+def zap_scan_page():
+    if request.method == 'POST':
+        target_url = request.form.get('target_url')
+        if not target_url:
+            return jsonify({'error': 'Target URL cannot be empty'}), 400
+        
+        task_id = run_zap_scan(target_url)
+        return jsonify({'task_id': task_id}), 202
+    
+    return render_template('zap_scan.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/git_analysis')
+def git_analysis_page():
+    return render_template('git_analysis.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/trivy_image_scan', methods=['GET', 'POST'])
+def trivy_image_scan_page():
+    if request.method == 'POST':
+        image_name = request.form.get('image_name')
+        if not image_name:
+            return jsonify({'error': 'Image name cannot be empty'}), 400
+        
+        task_id = run_trivy_image_scan(image_name)
+        return jsonify({'task_id': task_id}), 202
+    
+    return render_template('trivy_image_scan.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/trivy_iac_scan', methods=['GET', 'POST'])
+def trivy_iac_scan_page():
+    if request.method == 'POST':
+        target_path = request.form.get('target_path')
+        if not target_path:
+            return jsonify({'error': 'Target path cannot be empty'}), 400
+        
+        task_id = run_trivy_iac_scan(target_path)
+        return jsonify({'task_id': task_id}), 202
+    
+    return render_template('trivy_iac_scan.html', lang=g.lang, lang_code=g.lang_code)
 
 @bp.route('/network_analysis')
 def net_analysis_page():
@@ -497,8 +579,8 @@ def run_email_auth_lookup_route():
 
 @bp.route('/set_language/<lang_code>')
 def set_language_route(lang_code):
-    response = make_response(f"Language set to {lang_code}")
-    response.set_cookie('lang', lang_code)
+    response = jsonify(message=f"Language set to {lang_code}")
+    response.set_cookie('lang', lang_code, secure=True, httponly=True, samesite='Lax')
     return response
 
 @bp.route('/run_nikto_scan', methods=['POST'])

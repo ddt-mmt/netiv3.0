@@ -129,7 +129,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === 'completed') {
                     var resultText = response.result.stdout || "";
-                    $('#output-display').text(resultText).show(); // Show raw output
+                    // Raw scan data is no longer shown on the UI for successful scans.
                     runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
                     clearTaskState();
                 } else if (response.status === 'error') {

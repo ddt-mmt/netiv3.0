@@ -4,6 +4,9 @@
 
 This update focuses on improving user experience, consolidating features, and enhancing AI integration:
 
+*   **Security Hardening (SAST):** Addressed multiple vulnerabilities found by a Semgrep scan, including fixing disabled TLS verification, securing session cookies, hardening Docker container permissions, and mitigating potential XSS vectors.
+*   **Bug Fix:** Corrected multiple JSON syntax errors in the `translations.json` file that caused application startup failure.
+*   **Feature:** Added duration warnings for long-running scans (Nmap, ZAP, Subdomain Enumeration) to help users make informed decisions before starting them.
 *   **Custom Nmap Scans**: Users can now define their own Nmap scans with custom ports and arguments, allowing for more flexible and targeted scanning.
 *   **Feature Consolidation:** Merged 'Web Analysis' and 'Domain/Subdomain Target' into a single 'Web & Domain Analysis' page and a single card on the main dashboard for better efficiency.
 *   **Enhanced AI Integration:** Fully integrated AI analysis across all relevant pages, including 'Network Device Analyzer' and 'Email Target', ensuring comprehensive AI-powered insights.
@@ -12,7 +15,9 @@ This update focuses on improving user experience, consolidating features, and en
 *   **Robust Language Switching:** Implemented a more reliable AJAX-based mechanism for language switching to ensure translations update consistently.
 *   **Full Asynchronous Refactor**: All scanning, analysis, and exploitation tasks have been refactored to run as asynchronous, cancellable background jobs. This provides a non-blocking, responsive user experience across the entire application.
 *   **Exploit Execution**: Implemented the core functionality to search, configure, and execute Metasploit exploits directly from the web interface.
+*   **Consolidated Code & App Scanners**: Gitleaks, Semgrep, OWASP ZAP, and Trivy (SCA, Image, IaC) tools have been consolidated into a single, tabbed interface under 'Code & App Scanners'. All these scans now run asynchronously with real-time status updates, cancellation support, and integrated AI analysis.
 *   **Dockerization**: The application is now fully containerized with Docker, providing a consistent and portable production-ready deployment.
+*   **Dockerfile Improvements**: Updated OWASP ZAP to v2.16.1, refined Nuclei template installation to direct Git clone, and explicitly set `GOPATH` and `PATH` in the Dockerfile for more robust Go tool builds.
 
 ## Deployment (Recommended: Docker)
 
@@ -88,6 +93,7 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
 *   **Network Scanning**: Perform various network scans like Ping, Traceroute, NSLookup, and Nmap scans (including custom scans).
 *   **Web & Domain Analysis**: Enumerate subdomains, analyze email security, and crawl websites for endpoints.
 *   **Vulnerability Scanning**: Run Nikto scans, XXE scans, and Nuclei scans against web targets.
+*   **Code & Application Security Scanners**: Consolidated interface for Gitleaks (secret detection), Semgrep (SAST), OWASP ZAP (DAST), and Trivy (SCA, Image, IaC) with asynchronous execution and AI analysis.
 *   **IDOR Testing**: A dedicated interface to test for Insecure Direct Object Reference vulnerabilities.
 *   **Metasploit Integration**: Search for Metasploit modules, view module details, and execute exploits.
 *   **AI-Powered Analysis**: Analyze scan results and generate reports using Google Gemini.
@@ -114,6 +120,7 @@ The application integrates a suite of well-known security tools to perform its a
 *   **Nikto**: A web server scanner which performs comprehensive tests against web servers for multiple items.
 *   **Sublist3r**: For enumerating subdomains of websites.
 *   **Nuclei**: A fast and customizable vulnerability scanner.
+*   **OWASP ZAP**: Dynamic Application Security Testing (DAST) tool (v2.16.1).
 *   **Metasploit**: For exploit searching and execution.
 *   **dsniff (arpspoof, dnsspoof)**: For DNS spoofing exercises.
 *   **dnsutils (dig)**: For DNS queries.
@@ -147,7 +154,16 @@ Docker builds, particularly those involving Go compilers and large template down
 ## Troubleshooting
 
 *   **Docker Logs**: To see the application logs when running with Docker, use the command: `docker logs netiv3-prod -f`
+*   **Application Startup Timeout**: If the application fails to load in the browser or Gunicorn workers timeout during startup, consider increasing the Gunicorn `--timeout` value in the Dockerfile's `CMD` instruction (e.g., `--timeout 120`). This might be necessary for environments with slower I/O or during initial template/dependency loading.
+*   **JSON Errors**: If you see `json.decoder.JSONDecodeError` in the logs, check the JSON files for syntax errors. We found and fixed errors in `app/static/translations.json`.
 *   **JSON Errors**: If you see `json.decoder.JSONDecodeError` in the logs, check the JSON files for syntax errors. We found and fixed errors in `/usr/lib/gemini-cli/netiv3/netiV3/app/static/translations.json`.
 
 ## Copyright and License
 (Content unchanged)
+
+## Security Roadmap
+
+The following are planned security improvements that have been identified but not yet implemented:
+
+*   **Implement Read-Only Root Filesystem:** The application container's root filesystem is currently writable. To improve security, it should be set to `read_only: true`. This requires modifying the application to write temporary files (like scan results) to a dedicated `tmpfs` volume instead of the regular filesystem.
+*   **Add Subresource Integrity (SRI):** All external JavaScript resources loaded from CDNs should have an `integrity` attribute. This requires calculating and adding the correct cryptographic hash for each external resource to prevent loading of compromised files.
