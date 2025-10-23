@@ -37,6 +37,95 @@
             </ul>
 
             <div class="tab-content pt-3" id="scannerTabsContent">
+                <!-- Gitleaks Tab Content -->
+                <div class="tab-pane fade show active" id="gitleaks" role="tabpanel" aria-labelledby="gitleaks-tab">
+                    <form class="analysisForm" data-url="/gitleaks_scan">
+                        <div class="mb-3">
+                            <label for="gitleaksRepoUrl" class="form-label">{{ lang.repo_url_label | default('Repository URL') }}</label>
+                            <input type="text" class="form-control" id="gitleaksRepoUrl" name="repo_url" placeholder="{{ lang.repo_url_placeholder | default('e.g., https://github.com/owner/repo.git') }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.gitleaks_scan_button | default('Run Gitleaks Scan') }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Semgrep Tab Content -->
+                <div class="tab-pane fade" id="semgrep" role="tabpanel" aria-labelledby="semgrep-tab">
+                    <form class="analysisForm" data-url="/semgrep_scan">
+                        <div class="mb-3">
+                            <label for="semgrepTargetPath" class="form-label">{{ lang.target_path_label | default('Target Path (Repo URL or Local Path)') }}</label>
+                            <input type="text" class="form-control" id="semgrepTargetPath" name="target_path" placeholder="{{ lang.target_path_placeholder | default('e.g., https://github.com/owner/repo.git or /app/src') }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="semgrepConfigUrl" class="form-label">{{ lang.semgrep_config_label | default('Semgrep Config URL (Optional)') }}</label>
+                            <input type="text" class="form-control" id="semgrepConfigUrl" name="config_url" placeholder="{{ lang.semgrep_config_placeholder | default('e.g., auto or https://semgrep.dev/p/r/javascript') }}">
+                            <small class="form-text text-muted">{{ lang.semgrep_config_info | default('Defaults to auto. Can be a URL or local path.') }}</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.semgrep_scan_button | default('Run Semgrep Scan') }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- OWASP ZAP Tab Content -->
+                <div class="tab-pane fade" id="zap" role="tabpanel" aria-labelledby="zap-tab">
+                    <form class="analysisForm" data-url="/zap_scan">
+                        <div class="mb-3">
+                            <label for="zapTargetUrl" class="form-label">{{ lang.target_url_label | default('Target URL') }}</label>
+                            <input type="text" class="form-control" id="zapTargetUrl" name="target_url" placeholder="{{ lang.target_url_placeholder | default('e.g., https://example.com') }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.zap_scan_button | default('Run OWASP ZAP Scan') }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Trivy SCA Tab Content -->
+                <div class="tab-pane fade" id="trivy-sca" role="tabpanel" aria-labelledby="trivy-sca-tab">
+                    <form class="analysisForm" data-url="/trivy_sca">
+                        <div class="mb-3">
+                            <label for="trivyScaTargetPath" class="form-label">{{ lang.target_path_label | default('Target Path (Repo URL or Local Path)') }}</label>
+                            <input type="text" class="form-control" id="trivyScaTargetPath" name="target_path" placeholder="{{ lang.target_path_placeholder | default('e.g., https://github.com/owner/repo.git or /app/src') }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.trivy_sca_scan_button | default('Run Trivy SCA Scan') }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Trivy Image Tab Content -->
+                <div class="tab-pane fade" id="trivy-image" role="tabpanel" aria-labelledby="trivy-image-tab">
+                    <form class="analysisForm" data-url="/trivy_image_scan">
+                        <div class="mb-3">
+                            <label for="trivyImageName" class="form-label">{{ lang.image_name_label | default('Image Name') }}</label>
+                            <input type="text" class="form-control" id="trivyImageName" name="image_name" placeholder="{{ lang.image_name_placeholder | default('e.g., nginx:latest') }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.trivy_image_scan_button | default('Run Trivy Image Scan') }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Trivy IaC Tab Content -->
+                <div class="tab-pane fade" id="trivy-iac" role="tabpanel" aria-labelledby="trivy-iac-tab">
+                    <form class="analysisForm" data-url="/trivy_iac_scan">
+                        <div class="mb-3">
+                            <label for="trivyIacTargetPath" class="form-label">{{ lang.target_path_label | default('Target Path (Repo URL or Local Path)') }}</label>
+                            <input type="text" class="form-control" id="trivyIacTargetPath" name="target_path" placeholder="{{ lang.target_path_placeholder | default('e.g., https://github.com/owner/repo.git or /app/src') }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="button-text">{{ lang.trivy_iac_scan_button | default('Run Trivy IaC Scan') }}</span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
 
             <div id="results-area" class="mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
