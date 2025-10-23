@@ -81,7 +81,7 @@ ENV FLASK_APP=run.py
 ENV FLASK_ENV=production
 
 # Port yang digunakan aplikasi
-EXPOSE 5004
+EXPOSE 5005
 
 # Jalankan aplikasi menggunakan Gunicorn
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5004", "--timeout", "120", "--log-level", "debug", "run:app"]
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5005", "--timeout", "120", "--log-level", "debug", "run:app"]

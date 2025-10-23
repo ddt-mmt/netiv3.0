@@ -4,6 +4,14 @@
 
 This update focuses on improving user experience, consolidating features, and enhancing AI integration:
 
+*   **New Feature: Git Patch & Automated Pull Requests**:
+    *   **Automated Repository Analysis**: Users can now enter a Git repository URL to perform an automated security analysis using Semgrep and Google's Gemini AI.
+    *   **Interactive Fix Simulation**: Instead of a simple popup, the application now directs users to a dedicated simulation page that displays a clear, side-by-side diff of the proposed fixes.
+    *   **Patch Generation & Pull Requests**: Users can download the generated fixes as a `.patch` file or, if authenticated with GitHub, automatically create a new branch and open a pull request with the suggested changes.
+*   **UI/UX Enhancements**:
+    *   **Informative Findings**: Finding titles in the Git Patch feature now clearly display the file path and line number (`file:line`) for quick identification.
+    *   **Vulnerability Descriptions**: Each finding is now accompanied by a brief, AI-generated description of the vulnerability.
+    *   **Consistent Theming**: Added missing icons to the "Git Patch" and "Git Analysis" cards on the main dashboard for a more uniform look.
 *   **Security Hardening (SAST):** Addressed multiple vulnerabilities found by a Semgrep scan, including fixing disabled TLS verification, securing session cookies, hardening Docker container permissions, and mitigating potential XSS vectors.
 *   **Bug Fix:** Corrected multiple JSON syntax errors in the `translations.json` file that caused application startup failure.
 *   **Feature:** Added duration warnings for long-running scans (Nmap, ZAP, Subdomain Enumeration) to help users make informed decisions before starting them.
@@ -26,7 +34,7 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
 **Prerequisites:**
 *   Docker Engine installed and running.
 
-**Steps:**
+**Steps:** 
 
 1.  **Clone the repository:**
     ```bash
@@ -41,11 +49,11 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
     ```
 
 3.  **Run the Docker Container:**
-    This will run the application in a container, expose it on port 5004, and ensure it restarts automatically.
+    This will run the application in a container, expose it on port 5005, and ensure it restarts automatically.
     ```bash
-    docker run -d -p 5004:5004 --name netiv3-prod --restart unless-stopped netiv3
+    docker run -d -p 5005:5005 --name netiv3-prod --restart unless-stopped netiv3
     ```
-    The application will be available at `http://localhost:5004`.
+    The application will be available at `http://localhost:5005`.
 
 4.  **Metasploit RPC Daemon (Required for Exploit functionality)**:
     The application still requires a running `msfrpcd` instance to connect to. Ensure this is running on a network accessible to the Docker container.
@@ -85,7 +93,7 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
 
 5.  **Run the Application:**
     ```bash
-    gunicorn --workers 4 --bind 0.0.0.0:5004 "app:create_app()"
+    gunicorn --workers 4 --bind 0.0.0.0:5005 "app:create_app()"
     ```
 
 ## Core Features
@@ -93,6 +101,7 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
 *   **Network Scanning**: Perform various network scans like Ping, Traceroute, NSLookup, and Nmap scans (including custom scans).
 *   **Web & Domain Analysis**: Enumerate subdomains, analyze email security, and crawl websites for endpoints.
 *   **Vulnerability Scanning**: Run Nikto scans, XXE scans, and Nuclei scans against web targets.
+*   **Git Patch & Automated PRs**: Automatically analyze Git repositories for vulnerabilities, simulate fixes, and generate patches or create pull requests.
 *   **Code & Application Security Scanners**: Consolidated interface for Gitleaks (secret detection), Semgrep (SAST), OWASP ZAP (DAST), and Trivy (SCA, Image, IaC) with asynchronous execution and AI analysis.
 *   **IDOR Testing**: A dedicated interface to test for Insecure Direct Object Reference vulnerabilities.
 *   **Metasploit Integration**: Search for Metasploit modules, view module details, and execute exploits.
@@ -155,8 +164,8 @@ Docker builds, particularly those involving Go compilers and large template down
 
 *   **Docker Logs**: To see the application logs when running with Docker, use the command: `docker logs netiv3-prod -f`
 *   **Application Startup Timeout**: If the application fails to load in the browser or Gunicorn workers timeout during startup, consider increasing the Gunicorn `--timeout` value in the Dockerfile's `CMD` instruction (e.g., `--timeout 120`). This might be necessary for environments with slower I/O or during initial template/dependency loading.
+*   **Port Configuration**: The application's listening port is configured in the `Dockerfile`. If you change the port mapping in the `docker run` command, ensure you also update the `EXPOSE` and `CMD` instructions in the `Dockerfile` to match.
 *   **JSON Errors**: If you see `json.decoder.JSONDecodeError` in the logs, check the JSON files for syntax errors. We found and fixed errors in `app/static/translations.json`.
-*   **JSON Errors**: If you see `json.decoder.JSONDecodeError` in the logs, check the JSON files for syntax errors. We found and fixed errors in `/usr/lib/gemini-cli/netiv3/netiV3/app/static/translations.json`.
 
 ## Copyright and License
 (Content unchanged)

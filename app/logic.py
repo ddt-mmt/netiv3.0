@@ -15,6 +15,8 @@ import google.generativeai as genai
 import uuid
 import threading
 import signal
+import tempfile
+import shutil
 
 # Global dictionary to hold the state of background tasks
 tasks = {}
@@ -942,6 +944,150 @@ def run_nuclei_scan_worker(task_id, target_url, scan_type):
 def run_nuclei_scan(target_url, scan_type):
     """Starts a background Nuclei scan task."""
     return create_task(run_nuclei_scan_worker, target_url, scan_type)
+
+# --- DevSecSimOps Integration ---
+from app.gitleaks_scanner import _run_gitleaks_scan_worker
+from app.semgrep_scanner import _run_semgrep_scan_worker
+from app.trivy_scanner import _run_trivy_sca_worker
+from app.trivy_advanced_scanner import _run_trivy_iac_scan_worker
+
+def _run_devsecsimops_scan_worker(task_id, repo_url, api_key, language):
+    """
+    Worker function to orchestrate the DevSecSimOps scan.
+    Clones the repo, runs multiple scanners, aggregates results, and performs AI analysis.
+    """
+    task = tasks[task_id]
+    task['status'] = 'running'
+    task['result'] = {'stdout': '', 'stderr': '', 'findings': {}}
+    temp_dir = None
+
+    try:
+        # 1. Create a temporary directory and clone the repository
+        task['result']['stdout'] += "Starting DevSecSimOps scan...\n"
+        temp_dir = tempfile.mkdtemp()
+        repo_name = repo_url.split('/')[-1].replace('.git', '')
+        clone_path = os.path.join(temp_dir, repo_name)
+        task['result']['stdout'] += f"Cloning {repo_url} into {clone_path}...\n"
+
+        clone_command = ['git', 'clone', '--depth', '1', shlex.quote(repo_url), shlex.quote(clone_path)]
+        clone_process = subprocess.run(clone_command, check=False, capture_output=True, text=True)
+
+        if task['status'] == 'cancelled':
+            task['result']['stderr'] += "Task cancelled during cloning.\n"
+            return
+
+        if clone_process.returncode != 0:
+            task['status'] = 'error'
+            task['result']['stderr'] += f"Git clone failed: {clone_process.stderr}\n"
+            return
+        task['result']['stdout'] += "Repository cloned successfully.\n"
+
+        # 2. Run Scanners
+        # Gitleaks (Note: Gitleaks worker currently clones again, this is a known inefficiency for now)
+        task['result']['stdout'] += "\nRunning Gitleaks scan...\n"
+        gitleaks_sub_task_id = str(uuid.uuid4()) # Create a sub-task ID for Gitleaks
+        tasks[gitleaks_sub_task_id] = {'status': 'pending', 'result': {'stdout': '', 'stderr': ''}}
+        _run_gitleaks_scan_worker(gitleaks_sub_task_id, repo_url) # Call directly, it will update its own task entry
+        gitleaks_result = tasks[gitleaks_sub_task_id]
+        task['result']['stdout'] += gitleaks_result['result']['stdout']
+        task['result']['stderr'] += gitleaks_result['result']['stderr']
+        if gitleaks_result['status'] == 'error':
+            task['result']['stderr'] += "Gitleaks scan failed.\n"
+        else:
+            task['result']['findings']['gitleaks'] = gitleaks_result['result'].get('leaks_found', [])
+        del tasks[gitleaks_sub_task_id] # Clean up sub-task entry
+
+        # Semgrep
+        task['result']['stdout'] += "\nRunning Semgrep scan...\n"
+        semgrep_sub_task_id = str(uuid.uuid4())
+        tasks[semgrep_sub_task_id] = {'status': 'pending', 'result': {'stdout': '', 'stderr': ''}}
+        _run_semgrep_scan_worker(semgrep_sub_task_id, clone_path)
+        semgrep_result = tasks[semgrep_sub_task_id]
+        task['result']['stdout'] += semgrep_result['result']['stdout']
+        task['result']['stderr'] += semgrep_result['result']['stderr']
+        if semgrep_result['status'] == 'error':
+            task['result']['stderr'] += "Semgrep scan failed.\n"
+        else:
+            task['result']['findings']['semgrep'] = semgrep_result['result'].get('semgrep_results', [])
+        del tasks[semgrep_sub_task_id]
+
+        # Trivy SCA
+        task['result']['stdout'] += "\nRunning Trivy SCA scan...\n"
+        trivy_sca_sub_task_id = str(uuid.uuid4())
+        tasks[trivy_sca_sub_task_id] = {'status': 'pending', 'result': {'stdout': '', 'stderr': ''}}
+        _run_trivy_sca_worker(trivy_sca_sub_task_id, clone_path)
+        trivy_sca_result = tasks[trivy_sca_sub_task_id]
+        task['result']['stdout'] += trivy_sca_result['result']['stdout']
+        task['result']['stderr'] += trivy_sca_result['result']['stderr']
+        if trivy_sca_result['status'] == 'error':
+            task['result']['stderr'] += "Trivy SCA scan failed.\n"
+        else:
+            task['result']['findings']['trivy_sca'] = trivy_sca_result['result'].get('trivy_sca_results', [])
+        del tasks[trivy_sca_sub_task_id]
+
+        # Trivy IaC
+        task['result']['stdout'] += "\nRunning Trivy IaC scan...\n"
+        trivy_iac_sub_task_id = str(uuid.uuid4())
+        tasks[trivy_iac_sub_task_id] = {'status': 'pending', 'result': {'stdout': '', 'stderr': ''}}
+        _run_trivy_iac_scan_worker(trivy_iac_sub_task_id, clone_path)
+        trivy_iac_result = tasks[trivy_iac_sub_task_id]
+        task['result']['stdout'] += trivy_iac_result['result']['stdout']
+        task['result']['stderr'] += trivy_iac_result['result']['stderr']
+        if trivy_iac_result['status'] == 'error':
+            task['result']['stderr'] += "Trivy IaC scan failed.\n"
+        else:
+            task['result']['findings']['trivy_iac'] = trivy_iac_result['result'].get('trivy_iac_results', [])
+        del tasks[trivy_iac_sub_task_id]
+
+        if task['status'] == 'cancelled':
+            task['result']['stderr'] += "Task cancelled during scanning phase.\n"
+            return
+
+        # 3. Aggregate Results for AI Analysis
+        aggregated_results = {
+            "gitleaks": gitleaks_result['result'].get('leaks_found', 'No leaks found.'),
+            "semgrep": semgrep_result['result'].get('semgrep_results', 'No Semgrep findings.'),
+            "trivy_sca": trivy_sca_result['result'].get('trivy_sca_results', 'No Trivy SCA findings.'),
+            "trivy_iac": trivy_iac_result['result'].get('trivy_iac_results', 'No Trivy IaC findings.')
+        }
+        
+        task['result']['stdout'] += "\nAggregating results for AI analysis...\n"
+        full_results_string = json.dumps(aggregated_results, indent=2)
+
+        # 4. AI Analysis
+        task['result']['stdout'] += "\nPerforming AI analysis of findings...\n"
+        ai_analysis_task_id = analyze_results_with_gemini(api_key, full_results_string, language)
+        
+        # Wait for AI analysis to complete (this is a blocking call for the worker thread)
+        while tasks[ai_analysis_task_id]['status'] not in ['completed', 'error', 'cancelled']:
+            time.sleep(2) # Poll every 2 seconds
+
+        ai_analysis_result = tasks[ai_analysis_task_id]
+        if ai_analysis_result['status'] == 'completed':
+            task['result']['ai_analysis'] = ai_analysis_result['result'].get('analysis')
+            task['result']['stdout'] += "\nAI analysis completed successfully.\n"
+        else:
+            task['result']['stderr'] += f"\nAI analysis failed: {ai_analysis_result['result'].get('message', 'Unknown AI error')}\n"
+            task['status'] = 'error'
+            return
+
+        task['status'] = 'completed'
+        task['result']['stdout'] += "\nDevSecSimOps scan completed.\n"
+
+    except Exception as e:
+        if task_id in tasks:
+            task['status'] = 'error'
+            task['result']['stderr'] += f"An unexpected error occurred during DevSecSimOps scan: {str(e)}\n"
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            task['result']['stdout'] += f"Cleaning up temporary directory {temp_dir}...\n"
+            shutil.rmtree(temp_dir)
+        if task_id in tasks:
+            task['end_time'] = time.time()
+
+def run_devsecsimops_scan(repo_url, api_key, language):
+    """Starts a background DevSecSimOps scan task."""
+    return create_task(_run_devsecsimops_scan_worker, repo_url, api_key, language)
 def run_dns_spoof_test(victim_ip, target_domain, fake_ip):
     temp_hosts_file_path = '/tmp/temp_hosts'
     arpspoof_victim_process = None

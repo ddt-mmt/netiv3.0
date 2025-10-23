@@ -1,6 +1,8 @@
 import json
 import os
-from flask import render_template, request, jsonify, send_file, session, g, Blueprint, current_app, make_response
+import httpx
+from datetime import datetime, timedelta
+from flask import render_template, request, jsonify, send_file, session, g, Blueprint, current_app, make_response, redirect, url_for
 from app.logic import (
     perform_ping_scan,
     perform_traceroute_scan,
@@ -25,13 +27,17 @@ from app.logic import (
     perform_idor_test,
     perform_discovery_crawl,
     get_task_status, # <-- Import new function
-    cancel_task      # <-- Import new function
+    cancel_task,     # <-- Import new function
+    create_task,     # <-- Import create_task for gitgen
+    tasks            # <-- Import global tasks dict for gitgen
 )
 from app.trivy_scanner import run_trivy_sca
 from app.gitleaks_scanner import run_gitleaks_scan
 from app.semgrep_scanner import run_semgrep_scan
 from app.zap_scanner import run_zap_scan
 from app.trivy_advanced_scanner import run_trivy_image_scan, run_trivy_iac_scan
+from app.logic import run_devsecsimops_scan 
+from app.gitgen_logic import analyze_repository_worker, generate_patch_worker, simulate_fix_worker, create_pull_request_worker # Import gitgen workers
 
 bp = Blueprint('main', __name__)
 
@@ -662,7 +668,174 @@ def scan():
         scan_type = data.get('scan_type')
         if not all([target, scan_type]):
             return jsonify({'error': 'Target and scan type are required.'}), 400
-        task_id = run_scan(target, scan_type)
         return jsonify({'task_id': task_id}), 202
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/git_generate')
+def git_generate_page():
+    return redirect(url_for('main.git_patch_page'))
+
+@bp.route('/git_patch')
+def git_patch_page():
+    return render_template('git_patch.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/devsecsimops')
+def devsecsimops_page():
+    return render_template('devsecsimops.html', lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/devsecsimops_scan', methods=['POST'])
+def devsecsimops_scan_route():
+    try:
+        data = request.json
+        repo_url = data.get('repo_url')
+        api_key = data.get('api_key') # Get API key from frontend
+        
+        if not repo_url:
+            return jsonify({'error': 'Repository URL cannot be empty'}), 400
+        if not api_key:
+            return jsonify({'error': 'API Key is required for AI analysis.'}), 400
+        
+        task_id = run_devsecsimops_scan(repo_url, api_key, g.lang_code) 
+        return jsonify({'task_id': task_id}), 202
+    except Exception as e:
+        current_app.logger.exception("Error starting DevSecSimOps scan:")
+        return jsonify({'error': str(e)}), 500
+
+# --- Gitgen Integration Routes --- #
+GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
+GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
+
+@bp.route('/gitgen/login/github', methods=['GET'])
+def gitgen_github_login():
+    client_id = current_app.config.get("GITHUB_CLIENT_ID")
+    if not client_id:
+        return jsonify({"error": "GitHub Client ID not configured."}), 500
+    
+    return redirect(f"{GITHUB_AUTHORIZE_URL}?client_id={client_id}&scope=repo,user")
+
+@bp.route('/gitgen/auth/github/callback', methods=['GET'])
+def gitgen_github_callback():
+    code = request.args.get('code')
+    if not code:
+        return jsonify({"error": "Authorization code not provided."}), 400
+
+    client_id = current_app.config.get("GITHUB_CLIENT_ID")
+    client_secret = current_app.config.get("GITHUB_CLIENT_SECRET")
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "GitHub OAuth credentials not configured."}), 500
+
+    try:
+        token_response = httpx.post(
+            GITHUB_TOKEN_URL,
+            headers={"Accept": "application/json"},
+            json={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": code
+            }
+        )
+        token_response.raise_for_status()
+        token_data = token_response.json()
+        access_token = token_data.get("access_token")
+
+        if not access_token:
+            return jsonify({"error": "Failed to get GitHub access token."}), 400
+
+        session['github_access_token'] = access_token
+        return redirect(url_for('main.git_analysis_page')) # Redirect to git_analysis page after successful auth
+
+    except httpx.HTTPStatusError as e:
+        current_app.logger.exception(f"HTTP error during GitHub token exchange: {e.response.text}")
+        return jsonify({"error": f"GitHub token exchange failed: {e.response.text}"}), 500
+    except Exception as e:
+        current_app.logger.exception("Error during GitHub OAuth callback:")
+        return jsonify({"error": str(e)}), 500
+
+@bp.route('/gitgen/api/v1/analyze', methods=['POST'])
+def gitgen_analyze_repository():
+    try:
+        data = request.json
+        repo_url = data.get('repo_url')
+        gemini_api_key = data.get('gemini_api_key')
+
+        if not repo_url:
+            return jsonify({'error': 'Repository URL is required.'}), 400
+        if not gemini_api_key:
+            return jsonify({'error': 'Gemini API Key is required.'}), 400
+        
+        app = current_app._get_current_object()
+        task_id = create_task(analyze_repository_worker, app, repo_url, gemini_api_key, tasks)
+        return jsonify({'task_id': task_id}), 202
+    except Exception as e:
+        current_app.logger.exception("Error starting gitgen analyze task:")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/gitgen/simulate', methods=['POST'])
+def gitgen_simulate_page():
+    diff_content = request.form.get('diff_content', '')
+    return render_template('git_patch_simulation.html', diff_content=diff_content, lang=g.lang, lang_code=g.lang_code)
+
+@bp.route('/gitgen/api/v1/simulate-fix', methods=['POST'])
+def gitgen_simulate_fix():
+    try:
+        data = request.json
+        repo_url = data.get('repo_url')
+        findings = data.get('findings')
+        gemini_api_key = data.get('gemini_api_key')
+        analysis_task_id = data.get('analysis_task_id')
+
+        if not all([repo_url, findings, gemini_api_key, analysis_task_id]):
+            return jsonify({'error': 'repo_url, findings, gemini_api_key, and analysis_task_id are required.'}), 400
+        
+        app = current_app._get_current_object()
+        task_id = create_task(simulate_fix_worker, app, repo_url, findings, gemini_api_key, tasks, analysis_task_id)
+        return jsonify({'task_id': task_id}), 202
+    except Exception as e:
+        current_app.logger.exception("Error starting gitgen simulate fix task:")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/gitgen/api/v1/generate-patch', methods=['POST'])
+def gitgen_generate_patch():
+    try:
+        data = request.json
+        repo_url = data.get('repo_url')
+        findings = data.get('findings')
+        gemini_api_key = data.get('gemini_api_key')
+        analysis_task_id = data.get('analysis_task_id')
+
+        if not all([repo_url, findings, gemini_api_key, analysis_task_id]):
+            return jsonify({'error': 'repo_url, findings, gemini_api_key, and analysis_task_id are required.'}), 400
+        
+        app = current_app._get_current_object()
+        task_id = create_task(generate_patch_worker, app, repo_url, findings, gemini_api_key, tasks, analysis_task_id)
+        return jsonify({'task_id': task_id}), 202
+    except Exception as e:
+        current_app.logger.exception("Error starting gitgen generate patch task:")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/gitgen/api/v1/create-pull-request', methods=['POST'])
+def gitgen_create_pull_request():
+    try:
+        data = request.json
+        repo_url = data.get('repo_url')
+        patch_content = data.get('patch_content')
+        branch_name = data.get('branch_name', 'gitgen-fixes')
+        commit_message = data.get('commit_message', 'feat: Apply gitgen automated fixes')
+        pr_title = data.get('pr_title', 'Automated fixes from gitgen')
+        pr_body = data.get('pr_body', 'This PR applies automated security and efficiency fixes generated by gitgen.')
+        
+        github_token = session.get('github_access_token')
+        if not github_token:
+            return jsonify({'error': 'GitHub access token not found in session. Please authenticate with GitHub.'}), 401
+
+        if not all([repo_url, patch_content]):
+            return jsonify({'error': 'Repository URL and patch content are required.'}), 400
+        
+        app = current_app._get_current_object()
+        task_id = create_task(create_pull_request_worker, app, repo_url, patch_content, branch_name, commit_message, pr_title, pr_body, github_token, tasks)
+        return jsonify({'task_id': task_id}), 202
+    except Exception as e:
+        current_app.logger.exception("Error starting gitgen create PR task:")
         return jsonify({'error': str(e)}), 500

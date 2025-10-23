@@ -13,7 +13,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "5004:5004"
+      - "5005:5004"
     
     # BLOK ENVIRONMENT YANG BERSIH TANPA KOMENTAR DI BARIS NILAI
     # Ganti nilai di bawah ini dengan kunci rahasia dan API Anda

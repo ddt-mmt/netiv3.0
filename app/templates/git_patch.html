@@ -1,0 +1,385 @@
+
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.gitgen_analysis_title | default('Gitgen Analysis') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-git-alt"></i> {{ lang.git_patch_heading | default('Git Patch: Automated Repository Analysis & Patching') }}</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-gray-300 mb-4">{{ lang.git_patch_description | default('Enter a Git repository URL to perform automated security and efficiency analysis, and generate patches.') }}</p>
+
+            <div class="mb-3">
+                <label for="geminiApiKey" class="form-label">{{ lang.ai_key_label | default('Gemini API Key') }}</label>
+                <input type="password" class="form-control" id="geminiApiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis | default('Enter your Gemini API Key') }}" required>
+                <small class="form-text text-muted">{{ lang.ai_key_not_stored_info | default('This key is used for AI analysis and is not stored.') }}</small>
+            </div>
+            <hr>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0 text-white">{{ lang.git_patch_repo_analysis_title | default('Repository Analysis') }}</h4>
+                <button id="githubLoginButton" class="btn btn-info btn-sm">
+                    <i class="fab fa-github"></i> {{ lang.git_patch_login_github | default('Login with GitHub') }}
+                </button>
+            </div>
+
+            <form id="gitgenAnalysisForm">
+                <div class="mb-3">
+                    <label for="repoUrl" class="form-label">{{ lang.git_patch_repo_url_label | default('Repository URL') }}</label>
+                    <input type="text" class="form-control" id="repoUrl" placeholder="{{ lang.git_patch_repo_url_placeholder | default('e.g., https://github.com/owner/repo.git') }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    {{ lang.git_patch_analyze_repo_button | default('Analyze Repository') }}
+                    <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                </button>
+            </form>
+
+            <div id="results-area" class="mt-4" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="mb-0">{{ lang.analysis_results_title | default('Analysis Results') }}</h4>
+                    <div id="task-controls">
+                        <span id="task-timer" class="me-3">00:00</span>
+                        <button id="cancel-button" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times-circle"></i> {{ lang.cancel_button | default('Cancel') }}
+                        </button>
+                    </div>
+                </div>
+                <div id="analysis-in-progress">
+                    <div class="d-flex align-items-center">
+                        <strong>{{ lang.processing_message | default('Processing...') }}</strong>
+                    </div>
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div id="findings-list" class="list-group mt-3" style="display: none;"></div>
+                <button id="simulateFixButton" class="btn btn-info mt-3" style="display: none;">{{ lang.git_patch_simulate_fix_button | default('Simulate Fix') }}</button>
+                <button id="generatePatchButton" class="btn btn-success mt-3" style="display: none;">{{ lang.git_patch_generate_patch_button | default('Generate Patch') }}</button>
+            </div>
+
+            <div id="patch-area" class="mt-4" style="display: none;">
+                <h4 class="mb-0">{{ lang.git_patch_generated_patch_title | default('Generated Patch') }}</h4>
+                <pre id="patch-display" class="bg-gray-900 text-green-400 p-3 rounded-lg overflow-auto" style="max-height: 400px;"></pre>
+                <div class="mt-3">
+                    <button id="downloadPatchButton" class="btn btn-secondary">{{ lang.git_patch_download_patch_button | default('Download Patch') }}</button>
+                    <button id="createPRButton" class="btn btn-info">{{ lang.git_patch_create_pr_button | default('Create Pull Request') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for simulation -->
+<div class="modal fade" id="simulationModal" tabindex="-1" role="dialog" aria-labelledby="simulationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="simulationModalLabel">{{ lang.git_patch_simulation_title | default('Fix Simulation') }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre id="simulation-diff"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ lang.close_button | default('Close') }}</button>
+        <button type="button" class="btn btn-primary" id="applyFixButton">{{ lang.git_patch_apply_fix_button | default('Apply Fix') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    const lang = {{ lang | tojson }};
+    $(document).ready(function() {
+        let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+        let analysisFindings = [];
+        let analysisTaskId = null;
+
+        function clearTaskState() {
+            if (currentTask.intervalId) clearInterval(currentTask.intervalId);
+            if (currentTask.submitButton) {
+                const button = $(currentTask.submitButton);
+                button.prop('disabled', false).find('.spinner-border').hide();
+            }
+            $('#task-controls').hide();
+            currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
+            $('#analysis-in-progress').hide();
+        }
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const sec = (seconds % 60).toString().padStart(2, '0');
+            return `${min}:${sec}`;
+        }
+
+        function pollTaskStatus(taskId, callback) {
+            const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
+            $('#task-timer').text(formatTime(elapsedTime));
+            $('#analysis-in-progress strong').text(`${lang.processing_message || 'Processing...'} (${formatTime(elapsedTime)})`);
+
+            $.ajax({
+                url: `/task/status/${taskId}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'completed') {
+                        clearTaskState();
+                        callback(response.result);
+                    } else if (response.status === 'error') {
+                        const errorText = response.result.error || lang.unknown_error_occurred || 'Unknown error occurred.';
+                        $('#output-display').html(`<span class="text-danger">${lang.error_prefix || 'Error: '}${errorText}</span>`).show();
+                        clearTaskState();
+                    } else if (response.status === 'cancelled') {
+                        $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled || 'Task was cancelled.'}</span>`).show();
+                        clearTaskState();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#output-display').html(`<span class="text-danger">${lang.error_polling_status || 'Error polling status:'} ${error}</span>`).show();
+                    clearTaskState();
+                }
+            });
+        }
+
+        $('#gitgenAnalysisForm').on('submit', function(event) {
+            event.preventDefault();
+            if (currentTask.taskId) {
+                alert(lang.task_already_running_wait_cancel || 'A task is already running. Please wait or cancel the current task.');
+                return;
+            }
+
+            const repoUrl = $('#repoUrl').val();
+            const geminiApiKey = $('#geminiApiKey').val();
+            const button = $(this).find('button[type="submit"]');
+
+            $('#results-area').show();
+            button.prop('disabled', true).find('.spinner-border').show();
+            $('#analysis-in-progress').show();
+            $('#task-controls').show();
+            $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> ' + (lang.cancel_button || 'Cancel'));
+
+            $.ajax({
+                url: '/gitgen/api/v1/analyze',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ repo_url: repoUrl, gemini_api_key: geminiApiKey }),
+                success: function(response) {
+                    if (response.task_id) {
+                        analysisTaskId = response.task_id;
+                        currentTask.taskId = response.task_id;
+                        currentTask.startTime = Date.now();
+                        currentTask.submitButton = button;
+                        currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, function(result) {
+                            analysisFindings = result.findings || [];
+                            const findingsList = $('#findings-list');
+                            findingsList.empty();
+                            if (analysisFindings.length > 0) {
+                                analysisFindings.forEach((finding, index) => {
+                                    const findingElement = `
+                                        <div class="list-group-item list-group-item-action bg-dark text-white">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h5 class="mb-1">${finding.file_path}:${finding.line_number}</h5>
+                                                <input class="form-check-input" type="checkbox" value="" id="finding-${index}" data-finding-id="${finding.id}" checked>
+                                            </div>
+                                            <p class="mb-1 text-info">${finding.description}</p>
+                                        </div>`;
+                                    findingsList.append(findingElement);
+                                });
+                                findingsList.show();
+                                $('#simulateFixButton').show();
+                            } else {
+                                findingsList.html(`<div class="list-group-item bg-dark text-white">{{ lang.git_patch_no_findings | default('No findings were identified.') }}</div>`).show();
+                            }
+                        }), 2000);
+                    } else {
+                        $('#results-area').hide();
+                        alert(response.error || lang.failed_to_start_task || 'Failed to start task.');
+                        clearTaskState();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#results-area').hide();
+                    alert(`${lang.failed_to_start_task_colon || 'Failed to start analysis:'} ${status} - ${error}`);
+                    clearTaskState();
+                }
+            });
+        });
+
+        $('#simulateFixButton').on('click', function() {
+            const selectedFindings = [];
+            $('#findings-list .form-check-input:checked').each(function() {
+                const findingId = $(this).data('finding-id');
+                const finding = analysisFindings.find(f => f.id === findingId);
+                if (finding) {
+                    selectedFindings.push(finding);
+                }
+            });
+
+            if (selectedFindings.length === 0) {
+                alert(lang.git_patch_select_findings_alert || 'Please select at least one finding to generate a patch.');
+                return;
+            }
+
+            const repoUrl = $('#repoUrl').val();
+            const geminiApiKey = $('#geminiApiKey').val();
+            $(this).prop('disabled', true).text(lang.git_patch_simulating_fix_button || 'Simulating Fix...');
+
+            $.ajax({
+                url: '/gitgen/api/v1/simulate-fix',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ repo_url: repoUrl, findings: selectedFindings, gemini_api_key: geminiApiKey, analysis_task_id: analysisTaskId }),
+                success: function(response) {
+                    if (response.task_id) {
+                        currentTask.taskId = response.task_id;
+                        currentTask.startTime = Date.now();
+                        currentTask.submitButton = $('#simulateFixButton');
+                        currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, function(result) {
+                            $('#simulation-diff').text(result.diff_content);
+                            $('#simulationModal').modal('show');
+                            $('#generatePatchButton').show(); // Show the generate patch button
+                        }), 2000);
+                    } else {
+                        alert(response.error || 'Failed to start simulation.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert(`Simulation failed: ${status} - ${error}`);
+                },
+                complete: function () {
+                    $('#simulateFixButton').prop('disabled', false).text(lang.git_patch_simulate_fix_button || 'Simulate Fix');
+                }
+            });
+        });
+
+        $('#applyFixButton').on('click', function() {
+            $('#simulationModal').modal('hide');
+            $('#generatePatchButton').click();
+        });
+
+        $('#generatePatchButton').on('click', function() {
+            const selectedFindings = [];
+            $('#findings-list .form-check-input:checked').each(function() {
+                const findingId = $(this).data('finding-id');
+                const finding = analysisFindings.find(f => f.id === findingId);
+                if (finding) {
+                    selectedFindings.push(finding);
+                }
+            });
+
+            if (selectedFindings.length === 0) {
+                alert(lang.git_patch_select_findings_alert || 'Please select at least one finding to generate a patch.');
+                return;
+            }
+
+            const repoUrl = $('#repoUrl').val();
+            const geminiApiKey = $('#geminiApiKey').val();
+            $(this).prop('disabled', true).text(lang.git_patch_generating_patch_button || 'Generating Patch...');
+
+            $.ajax({
+                url: '/gitgen/api/v1/generate-patch',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ repo_url: repoUrl, findings: selectedFindings, gemini_api_key: geminiApiKey, analysis_task_id: analysisTaskId }),
+                success: function(response) {
+                    if (response.task_id) {
+                        currentTask.taskId = response.task_id;
+                        currentTask.startTime = Date.now();
+                        currentTask.submitButton = $('#generatePatchButton');
+                        currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, function(result) {
+                            $('#patch-display').text(result.patch_content);
+                            $('#patch-area').show();
+                        }), 2000);
+                    } else {
+                        alert(response.error || lang.git_patch_patch_generation_failed || 'Failed to generate patch.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert(`${lang.git_patch_patch_generation_failed_colon || 'Patch generation failed:'} ${status} - ${error}`);
+                },
+                complete: function () {
+                    $('#generatePatchButton').prop('disabled', false).text(lang.git_patch_generate_patch_button || 'Generate Patch');
+                }
+            });
+        });
+
+        $('#downloadPatchButton').on('click', function() {
+            const patchContent = $('#patch-display').text();
+            const blob = new Blob([patchContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gitgen-patch.diff';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        $('#createPRButton').on('click', function() {
+            const patchContent = $('#patch-display').text();
+            const repoUrl = $('#repoUrl').val();
+            $(this).prop('disabled', true).text(lang.git_patch_creating_pr_button || 'Creating PR...');
+
+            $.ajax({
+                url: '/gitgen/api/v1/create-pull-request',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ 
+                    repo_url: repoUrl, 
+                    patch_content: patchContent 
+                }),
+                success: function(response) {
+                    if (response.pr_url) {
+                        alert(`${lang.git_patch_pr_created_alert || 'Successfully created Pull Request:'} ${response.pr_url}`);
+                        window.open(response.pr_url, '_blank');
+                    } else {
+                        alert(response.error || lang.git_patch_pr_creation_failed || 'Failed to create Pull Request.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert(`${lang.git_patch_pr_creation_failed_colon || 'PR creation failed:'} ${status} - ${error}`);
+                },
+                complete: function () {
+                    $('#createPRButton').prop('disabled', false).text(lang.git_patch_create_pr_button || 'Create Pull Request');
+                }
+            });
+        });
+
+        $('#cancel-button').on('click', function() {
+            if (currentTask.taskId) {
+                $(this).prop('disabled', true).text(lang.cancelling_message || 'Cancelling...');
+                $('#analysis-in-progress strong').text(lang.cancelling_message || 'Cancelling...');
+                $.ajax({
+                    url: `/task/cancel/${currentTask.taskId}`,
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.status === 'cancelled') {
+                            $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled || 'Task cancelled.'}</span>`).show();
+                        } else {
+                            $('#output-display').html(`<span class="text-danger">${lang.failed_to_cancel_task || 'Failed to cancel task:'} ${response.message || lang.unknown_error_occurred || 'Unknown error.'}</span>`).show();
+                        }
+                        clearTaskState();
+                    },
+                    error: function(xhr) {
+                        $('#output-display').html(`<span class="text-danger">${lang.error_cancelling_task || 'Error cancelling task:'} ${xhr.responseText}</span>`).show();
+                        clearTaskState();
+                    }
+                });
+            }
+        });
+
+        $('#githubLoginButton').on('click', function() {
+            window.location.href = '/gitgen/login/github';
+        });
+    });
+</script>
+{% endblock %}

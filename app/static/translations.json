@@ -315,7 +315,20 @@
         "trivy_iac_scan_path_label": "Target Path:",
         "trivy_iac_scan_path_placeholder": "e.g.: . or /app/terraform",
         "trivy_iac_scan_button": "Run Trivy IaC Scan",
-        "trivy_iac_scan_results_title": "Trivy IaC Scan Results"
+        "trivy_iac_scan_results_title": "Trivy IaC Scan Results",
+        "git_patch_card_title": "Git Patch",
+        "git_patch_card_text": "Automated Git repository analysis and patch generation.",
+        "git_patch_title": "Git Patch",
+        "git_patch_heading": "Git Patch: Automated DevSecOps",
+        "git_patch_description": "Enter a Git repository URL to perform automated security and efficiency analysis.",
+        "ai_key_not_stored_info": "This key is used for AI analysis and is not stored.",
+        "git_patch_repo_analysis_title": "Repository Analysis",
+        "git_patch_login_github": "Login with GitHub",
+        "git_patch_repo_url_label": "Repository URL",
+        "git_patch_repo_url_placeholder": "e.g., https://github.com/owner/repo.git",
+        "git_patch_analyze_repo_button": "Analyze Repository",
+        "failed_to_cancel_task": "Failed to cancel task:",
+        "error_cancelling_task": "Error cancelling task:"
     },
     "id": {
         "index_title": "NETi - Dasbor Utama",
@@ -617,6 +630,19 @@
         "trivy_iac_scan_path_label": "Jalur Target:",
         "trivy_iac_scan_path_placeholder": "cth: . atau /app/terraform",
         "trivy_iac_scan_button": "Jalankan Pindaian IaC Trivy",
-        "trivy_iac_scan_results_title": "Hasil Pindaian IaC Trivy"
+        "trivy_iac_scan_results_title": "Hasil Pindaian IaC Trivy",
+        "git_patch_card_title": "Patch Git",
+        "git_patch_card_text": "Analisis repositori Git otomatis dan pembuatan patch.",
+        "git_patch_title": "Patch Git",
+        "git_patch_heading": "Patch Git: DevSecOps Otomatis",
+        "git_patch_description": "Masukkan URL repositori Git untuk melakukan analisis keamanan dan efisiensi otomatis.",
+        "ai_key_not_stored_info": "Kunci ini digunakan untuk analisis AI dan tidak disimpan.",
+        "git_patch_repo_analysis_title": "Analisis Repositori",
+        "git_patch_login_github": "Login dengan GitHub",
+        "git_patch_repo_url_label": "URL Repositori",
+        "git_patch_repo_url_placeholder": "cth: https://github.com/owner/repo.git",
+        "git_patch_analyze_repo_button": "Analisis Repositori",
+        "failed_to_cancel_task": "Gagal membatalkan tugas:",
+        "error_cancelling_task": "Kesalahan membatalkan tugas:"
     }
 }

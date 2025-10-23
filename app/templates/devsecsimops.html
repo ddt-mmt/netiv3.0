@@ -1,0 +1,192 @@
+{% extends "main_navigation.html" %}
+
+{% block title %}{{ lang.devsecsimops_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ lang.devsecsimops_heading }}</h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            {{ lang.devsecsimops_scan_repo }}
+        </div>
+        <div class="card-body">
+            <form id="devsecsimopsForm">
+                <div class="form-group">
+                    <label for="repoUrl">{{ lang.repo_url_label }}</label>
+                    <input type="text" class="form-control" id="repoUrl" name="repoUrl" placeholder="{{ lang.repo_url_placeholder }}" required>
+                    <small class="form-text text-muted">{{ lang.repo_url_hint }}</small>
+                </div>
+                <div class="form-group">
+                    <label for="apiKey">Gemini API Key</label>
+                    <input type="password" class="form-control" id="apiKey" name="apiKey" placeholder="Enter your Gemini API Key" required>
+                    <small class="form-text text-muted">This key is used for AI analysis and is not stored.</small>
+                </div>
+                <button type="submit" class="btn btn-primary">{{ lang.start_scan_button }}</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4" id="scanStatusCard" style="display: none;">
+        <div class="card-header">
+            {{ lang.scan_status_heading }}
+        </div>
+        <div class="card-body">
+            <p>{{ lang.current_status }}: <span id="scanStatus" class="font-weight-bold"></span></p>
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="scanProgressBar"></div>
+            </div>
+            <pre id="scanOutput" class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: scroll;"></pre>
+            <button class="btn btn-warning btn-sm mt-2" id="cancelScanBtn" style="display: none;">{{ lang.cancel_scan_button }}</button>
+        </div>
+    </div>
+
+    <div class="card mb-4" id="findingsCard" style="display: none;">
+        <div class="card-header">
+            {{ lang.findings_heading }}
+        </div>
+        <div class="card-body">
+            <div id="findingsList">
+                <!-- Findings will be loaded here -->
+            </div>
+            <button class="btn btn-success mt-3" id="startSimulationBtn" style="display: none;">{{ lang.start_simulation_button }}</button>
+        </div>
+    </div>
+
+    <div class="card mb-4" id="simulationCard" style="display: none;">
+        <div class="card-header">
+            {{ lang.simulation_heading }}
+        </div>
+        <div class="card-body">
+            <p>{{ lang.simulation_status }}: <span id="simulationStatus" class="font-weight-bold"></span></p>
+            <pre id="simulationOutput" class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: scroll;"></pre>
+            <button class="btn btn-info mt-3" id="downloadPatchBtn" style="display: none;">{{ lang.download_patch_button }}</button>
+            <button class="btn btn-primary mt-3" id="pushToGitBtn" style="display: none;">{{ lang.push_to_git_button }}</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentTaskId = null;
+    let scanInterval = null;
+
+    function updateProgressBar(status) {
+        let progress = 0;
+        switch(status) {
+            case 'pending': progress = 10; break;
+            case 'running': progress = 50; break;
+            case 'completed': progress = 100; break;
+            case 'error': progress = 100; break;
+            case 'cancelled': progress = 100; break;
+        }
+        $('#scanProgressBar').css('width', progress + '%').attr('aria-valuenow', progress);
+    }
+
+    function fetchTaskStatus(taskId) {
+        $.get(`/task/status/${taskId}`, function(data) {
+            $('#scanStatus').text(data.status);
+            updateProgressBar(data.status);
+            $('#scanOutput').append(data.result?.stdout || ''); // Append new output
+            $('#scanOutput').scrollTop($('#scanOutput')[0].scrollHeight); // Scroll to bottom
+
+            if (data.status === 'completed') {
+                clearInterval(scanInterval);
+                $('#cancelScanBtn').hide();
+                // Process and display findings here
+                $('#findingsCard').show();
+                $('#startSimulationBtn').show();
+                // Display aggregated findings and AI analysis
+                let findingsHtml = '';
+                if (data.result?.findings) {
+                    findingsHtml += '<h5>Aggregated Scanner Findings:</h5>';
+                    for (const scanner in data.result.findings) {
+                        if (data.result.findings[scanner] && data.result.findings[scanner].length > 0) {
+                            findingsHtml += `<h6>${scanner.toUpperCase()} Findings:</h6><ul>`;
+                            data.result.findings[scanner].forEach(finding => {
+                                // This part needs to be generic as findings structure varies per scanner
+                                findingsHtml += `<li>${JSON.stringify(finding)}</li>`; 
+                            });
+                            findingsHtml += '</ul>';
+                        } else {
+                            findingsHtml += `<p>${scanner.toUpperCase()}: No findings.</p>`;
+                        }
+                    }
+                } else {
+                    findingsHtml += '<p>No scanner findings available.</p>';
+                }
+
+                if (data.result?.ai_analysis) {
+                    findingsHtml += '<h5>AI Analysis Report:</h5>';
+                    findingsHtml += '<div class="markdown-body">' + marked.parse(data.result.ai_analysis) + '</div>';
+                } else {
+                    findingsHtml += '<p>No AI analysis report available.</p>';
+                }
+                $('#findingsList').html(findingsHtml);
+
+            } else if (data.status === 'error' || data.status === 'cancelled') {
+                clearInterval(scanInterval);
+                $('#cancelScanBtn').hide();
+                $('#scanOutput').append(`
+Error/Cancellation: ${data.result?.stderr || 'Unknown error'}`);
+                $('#scanOutput').scrollTop($('#scanOutput')[0].scrollHeight);
+            }
+        });
+    }
+
+    $('#devsecsimopsForm').submit(function(e) {
+        e.preventDefault();
+        const repoUrl = $('#repoUrl').val();
+        const apiKey = $('#apiKey').val(); // Get API Key
+        $('#scanStatusCard').show();
+        $('#findingsCard').hide();
+        $('#simulationCard').hide();
+        $('#scanOutput').empty();
+        $('#scanStatus').text('Starting...');
+        $('#cancelScanBtn').show();
+        updateProgressBar('pending');
+
+        $.ajax({
+            url: '/devsecsimops_scan',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ repo_url: repoUrl, api_key: apiKey }), // Include API Key
+            success: function(response) {
+                currentTaskId = response.task_id;
+                scanInterval = setInterval(() => fetchTaskStatus(currentTaskId), 2000);
+            },
+            error: function(xhr) {
+                $('#scanStatus').text('Error');
+                $('#scanOutput').text('Failed to start scan: ' + xhr.responseText);
+                $('#cancelScanBtn').hide();
+                updateProgressBar('error');
+            }
+        });
+    });
+
+    $('#cancelScanBtn').click(function() {
+        if (currentTaskId) {
+            $.post(`/task/cancel/${currentTaskId}`, function(response) {
+                console.log('Cancel response:', response);
+                $('#scanStatus').text('Cancelled');
+                clearInterval(scanInterval);
+                $('#cancelScanBtn').hide();
+            });
+        }
+    });
+
+    $('#startSimulationBtn').click(function() {
+        $('#simulationCard').show();
+        $('#simulationStatus').text('Starting simulation...');
+        $('#simulationOutput').empty();
+        // TODO: Implement actual simulation logic and API call
+        $('#simulationOutput').text('Simulation logic not yet implemented. This would apply fixes and re-scan.');
+        $('#downloadPatchBtn').show();
+        $('#pushToGitBtn').show();
+        $('#simulationStatus').text('Simulation (placeholder) completed.');
+    });
+
+    // TODO: Implement downloadPatchBtn and pushToGitBtn click handlers
+</script>
+{% endblock %}

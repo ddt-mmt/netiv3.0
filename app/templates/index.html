@@ -88,9 +88,18 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100 text-center" onclick="window.location.href='git_analysis';">
                 <div class="card-body">
-                    <div class="card-icon"><i class="fas fa-code-branch"></i></div> {# Using a code-branch icon for Code & App Scanners #}
+                    <div class="card-icon"><i class="fas fa-git-alt"></i></div> {# Using a git icon for Git Analysis #}
                     <h5 class="card-title">{{ lang.code_app_scanners_card_title | default('Code & App Scanners') }}</h5>
                     <p class="card-text">{{ lang.code_app_scanners_card_text | default('Static, Dynamic, and Dependency Analysis.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 text-center" onclick="window.location.href='git_patch';">
+                <div class="card-body">
+                    <div class="card-icon"><i class="fas fa-git-alt"></i></div> {# Using a git icon for Git Patch #}
+                    <h5 class="card-title">{{ lang.git_patch_card_title | default('Git Patch') }}</h5>
+                    <p class="card-text">{{ lang.git_patch_card_text | default('Automated Git repository analysis and patch generation.') }}</p>
                 </div>
             </div>
         </div>
