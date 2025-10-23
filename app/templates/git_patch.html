@@ -190,6 +190,7 @@
                                                 <input class="form-check-input" type="checkbox" value="" id="finding-${index}" data-finding-id="${finding.id}" checked>
                                             </div>
                                             <p class="mb-1 text-info">${finding.description}</p>
+                                            ${finding.gemini_analysis && finding.gemini_analysis.suggested_fix ? `<p class="mb-1 text-success"><strong>Suggested Fix:</strong> ${finding.gemini_analysis.suggested_fix}</p>` : ''}
                                         </div>`;
                                     findingsList.append(findingElement);
                                 });
@@ -239,14 +240,8 @@
                 data: JSON.stringify({ repo_url: repoUrl, findings: selectedFindings, gemini_api_key: geminiApiKey, analysis_task_id: analysisTaskId }),
                 success: function(response) {
                     if (response.task_id) {
-                        currentTask.taskId = response.task_id;
-                        currentTask.startTime = Date.now();
-                        currentTask.submitButton = $('#simulateFixButton');
-                        currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, function(result) {
-                            $('#simulation-diff').text(result.diff_content);
-                            $('#simulationModal').modal('show');
-                            $('#generatePatchButton').show(); // Show the generate patch button
-                        }), 2000);
+                        // Redirect to the simulation page with task_id and repo_url
+                        window.location.href = `/gitgen/simulate?task_id=${response.task_id}&repo_url=${encodeURIComponent(repoUrl)}`;
                     } else {
                         alert(response.error || 'Failed to start simulation.');
                     }

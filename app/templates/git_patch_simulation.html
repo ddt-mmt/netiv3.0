@@ -11,9 +11,21 @@
         </div>
         <div class="card-body">
             <a href="{{ url_for('main.git_patch_page') }}" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i> {{ lang.back_to_analysis | default('Back to Analysis') }}</a>
-            <div id="diff-container"></div>
-            <button id="downloadPatchButton" class="btn btn-success mt-3"><i class="fas fa-download"></i> {{ lang.git_patch_download_patch_button | default('Download Patch') }}</button>
-            <button id="pushToRepoButton" class="btn btn-info mt-3"><i class="fas fa-code-branch"></i> {{ lang.git_patch_push_to_repo_button | default('Push to Repo') }}</button>
+            
+            <div id="simulation-in-progress" class="alert alert-info" role="alert">
+                <strong>{{ lang.simulating_fix_message | default('Simulating fix and re-scanning...') }}</strong>
+                <div class="progress mt-2">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <div id="simulation-results" style="display: none;">
+                <div id="diff-container"></div>
+                <h4 class="mt-4">{{ lang.vulnerability_analysis_summary | default('Vulnerability Analysis Summary') }}</h4>
+                <pre id="analysis-summary" class="bg-gray-900 text-white p-3 rounded-lg overflow-auto" style="max-height: 300px;"></pre>
+                <button id="downloadPatchButton" class="btn btn-success mt-3"><i class="fas fa-download"></i> {{ lang.git_patch_download_patch_button | default('Download Patch') }}</button>
+                <button id="pushToRepoButton" class="btn btn-info mt-3"><i class="fas fa-code-branch"></i> {{ lang.git_patch_push_to_repo_button | default('Push to Repo') }}</button>
+            </div>
         </div>
     </div>
 </div>
@@ -24,24 +36,98 @@
 <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
 <script>
+    const lang = {{ lang | tojson }};
     $(document).ready(function() {
-        const diffString = `{{ diff_content | tojson }}`;
-        const diff2htmlUi = new Diff2HtmlUI($('#diff-container')[0], diffString, {
-            drawFileList: true,
-            fileListToggle: false,
-            fileListStartVisible: false,
-            fileContentToggle: true,
-            matching: 'lines',
-            outputFormat: 'side-by-side',
-            synchronisedScroll: true,
-            highlight: true,
-            renderNothingWhenEmpty: false,
-        });
-        diff2htmlUi.draw();
-        diff2htmlUi.highlightCode();
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('task_id');
+        const repoUrl = urlParams.get('repo_url');
+
+        let currentTask = { intervalId: null, taskId: taskId, startTime: Date.now() };
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const sec = (seconds % 60).toString().padStart(2, '0');
+            return `${min}:${sec}`;
+        }
+
+        function pollTaskStatus() {
+            const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
+            $('#simulation-in-progress strong').text(`${lang.simulating_fix_message || 'Simulating fix and re-scanning...'} (${formatTime(elapsedTime)})`);
+
+            $.ajax({
+                url: `/task/status/${currentTask.taskId}`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'completed') {
+                        clearInterval(currentTask.intervalId);
+                        const fullDiffContent = response.result.diff_content || "";
+                        displaySimulationResults(fullDiffContent);
+                    } else if (response.status === 'error') {
+                        clearInterval(currentTask.intervalId);
+                        const errorText = response.result.error || lang.unknown_error_occurred || 'Unknown error occurred.';
+                        $('#simulation-in-progress').html(`<div class="alert alert-danger">${lang.error_prefix || 'Error: '}${errorText}</div>`);
+                    } else if (response.status === 'cancelled') {
+                        clearInterval(currentTask.intervalId);
+                        $('#simulation-in-progress').html(`<div class="alert alert-warning">${lang.task_was_cancelled || 'Task was cancelled.'}</div>`);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    clearInterval(currentTask.intervalId);
+                    $('#simulation-in-progress').html(`<div class="alert alert-danger">${lang.error_polling_status || 'Error polling status:'} ${error}</div>`);
+                }
+            });
+        }
+
+        function displaySimulationResults(fullDiffContent) {
+            $('#simulation-in-progress').hide();
+            $('#simulation-results').show();
+
+            let codeDiff = "";
+            let analysisSummary = "";
+
+            const summaryMarker = "\n--- Vulnerability Analysis Summary ---\n";
+            const markerIndex = fullDiffContent.indexOf(summaryMarker);
+
+            if (markerIndex !== -1) {
+                codeDiff = fullDiffContent.substring(0, markerIndex);
+                analysisSummary = fullDiffContent.substring(markerIndex + summaryMarker.length);
+            } else {
+                codeDiff = fullDiffContent;
+                analysisSummary = lang.no_analysis_summary_found || "No detailed analysis summary found.";
+            }
+
+            // Render code diff
+            const diff2htmlUi = new Diff2HtmlUI($('#diff-container')[0], codeDiff, {
+                drawFileList: true,
+                fileListToggle: false,
+                fileContentToggle: true,
+                matching: 'lines',
+                outputFormat: 'side-by-side',
+                synchronisedScroll: true,
+                highlight: true,
+                renderNothingWhenEmpty: false,
+            });
+            diff2htmlUi.draw();
+            diff2htmlUi.highlightCode();
+
+            // Display analysis summary
+            $('#analysis-summary').text(analysisSummary);
+
+            // Enable buttons
+            $('#downloadPatchButton').prop('disabled', false);
+            $('#pushToRepoButton').prop('disabled', false);
+        }
+
+        if (taskId) {
+            currentTask.intervalId = setInterval(pollTaskStatus, 2000);
+        } else {
+            $('#simulation-in-progress').html(`<div class="alert alert-danger">${lang.error_no_task_id || 'Error: No task ID provided for simulation.'}</div>`);
+        }
 
         $('#downloadPatchButton').on('click', function() {
-            const blob = new Blob([diffString], { type: 'text/plain' });
+            // codeDiff is not defined in this scope, it needs to be passed or made global
+            // For now, assuming it will be available from displaySimulationResults or a global scope
+            const blob = new Blob([codeDiff], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -53,7 +139,10 @@
         });
 
         $('#pushToRepoButton').on('click', function() {
-            const repoUrl = new URLSearchParams(window.location.search).get('repo_url');
+            if (!repoUrl) {
+                alert(lang.repo_url_missing_for_pr || 'Repository URL is missing. Cannot create Pull Request.');
+                return;
+            }
             $(this).prop('disabled', true).text(lang.git_patch_creating_pr_button || 'Creating PR...');
 
             $.ajax({
@@ -62,7 +151,7 @@
                 contentType: 'application/json',
                 data: JSON.stringify({ 
                     repo_url: repoUrl, 
-                    patch_content: diffString 
+                    patch_content: codeDiff 
                 }),
                 success: function(response) {
                     if (response.pr_url) {

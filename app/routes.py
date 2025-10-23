@@ -772,10 +772,11 @@ def gitgen_analyze_repository():
         current_app.logger.exception("Error starting gitgen analyze task:")
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/gitgen/simulate', methods=['POST'])
+@bp.route('/gitgen/simulate', methods=['GET', 'POST'])
 def gitgen_simulate_page():
     diff_content = request.form.get('diff_content', '')
-    return render_template('git_patch_simulation.html', diff_content=diff_content, lang=g.lang, lang_code=g.lang_code)
+    repo_url = request.args.get('repo_url') # Get repo_url from query parameter
+    return render_template('git_patch_simulation.html', diff_content=diff_content, repo_url=repo_url, lang=g.lang, lang_code=g.lang_code)
 
 @bp.route('/gitgen/api/v1/simulate-fix', methods=['POST'])
 def gitgen_simulate_fix():
@@ -791,7 +792,13 @@ def gitgen_simulate_fix():
         
         app = current_app._get_current_object()
         task_id = create_task(simulate_fix_worker, app, repo_url, findings, gemini_api_key, tasks, analysis_task_id)
+        
+        # Poll task status and then redirect to simulation page
+        # This is a simplified immediate redirect, in a real app you'd poll via AJAX
+        # and then redirect client-side once task is complete.
+        # For now, we'll just pass the task_id and let the client poll.
         return jsonify({'task_id': task_id}), 202
+
     except Exception as e:
         current_app.logger.exception("Error starting gitgen simulate fix task:")
         return jsonify({'error': str(e)}), 500

@@ -119,6 +119,25 @@ async def _generate_fixes_in_batch(findings: List[dict], gemini_api_key: str) ->
         current_app.logger.error(f"Gemini fix generation failed: {e}")
         return {f['id']: f['code_snippet'] for f in findings}
 
+def _apply_fix_to_file(repo_path: str, file_path: str, line_number: int, fixed_code: str):
+    full_path = os.path.join(repo_path, file_path)
+    if not os.path.exists(full_path):
+        current_app.logger.error(f"File not found for applying fix: {full_path}")
+        return
+
+    with open(full_path, "r") as f:
+        lines = f.readlines()
+
+    # Adjust line number for 0-based indexing
+    if 0 <= line_number - 1 < len(lines):
+        lines[line_number - 1] = fixed_code.rstrip('\n') + '\n'
+    else:
+        current_app.logger.warning(f"Line number {line_number} out of range for file {file_path}")
+        return
+
+    with open(full_path, "w") as f:
+        f.writelines(lines)
+
 def _generate_diff(repo_path: str, findings: List[dict], gemini_api_key: str) -> str:
     all_patches_content = []
     fixed_codes = asyncio.run(_generate_fixes_in_batch(findings, gemini_api_key))
@@ -204,6 +223,7 @@ def analyze_repository_worker(task_id, app, repo_url: str, gemini_api_key: str, 
 
 def simulate_fix_worker(task_id, app, repo_url: str, findings: List[dict], gemini_api_key: str, tasks_dict: dict, analysis_task_id: str):
     with app.app_context():
+        temp_dir = None
         try:
             tasks_dict[task_id]['status'] = 'running'
             analysis_task = tasks_dict.get(analysis_task_id)
@@ -211,10 +231,39 @@ def simulate_fix_worker(task_id, app, repo_url: str, findings: List[dict], gemin
                 raise Exception("Analysis task not found or temp_dir not available.")
             temp_dir = analysis_task['temp_dir']
 
-            diff_content = _generate_diff(temp_dir, findings, gemini_api_key)
+            # 1. Get original findings for comparison
+            original_findings = analysis_task['result']['findings']
+            original_finding_ids = {f['id'] for f in original_findings}
+
+            # 2. Apply proposed fixes to the temporary repository
+            fixed_codes = asyncio.run(_generate_fixes_in_batch(findings, gemini_api_key))
+            for finding in findings:
+                fixed_code = fixed_codes.get(finding['id'])
+                if fixed_code:
+                    _apply_fix_to_file(temp_dir, finding['file_path'], finding['line_number'], fixed_code)
+
+            # 3. Run re-scan on the fixed repository
+            fixed_semgrep_findings = run_semgrep_scan(temp_dir)
+            fixed_finding_ids = {f['id'] for f in fixed_semgrep_findings}
+
+            # 4. Generate enhanced diff with analysis results
+            enhanced_diff_content = []
+            code_diff = _generate_diff(temp_dir, findings, gemini_api_key) # Generate actual code diff
+            enhanced_diff_content.append(code_diff)
+            enhanced_diff_content.append("\n--- Vulnerability Analysis Summary ---\n")
+
+            for original_f in original_findings:
+                if original_f['id'] in original_finding_ids and original_f['id'] not in fixed_finding_ids:
+                    enhanced_diff_content.append(f"[FIXED] {original_f['file_path']}:{original_f['line_number']} - {original_f['description']}")
+                elif original_f['id'] in original_finding_ids and original_f['id'] in fixed_finding_ids:
+                    enhanced_diff_content.append(f"[STILL DETECTED] {original_f['file_path']}:{original_f['line_number']} - {original_f['description']}")
+            
+            for new_f in fixed_semgrep_findings:
+                if new_f['id'] not in original_finding_ids:
+                    enhanced_diff_content.append(f"[NEWLY INTRODUCED] {new_f['file_path']}:{new_f['line_number']} - {new_f['description']}")
 
             tasks_dict[task_id]['status'] = 'completed'
-            tasks_dict[task_id]['result'] = {"diff_content": diff_content}
+            tasks_dict[task_id]['result'] = {"diff_content": "\n".join(enhanced_diff_content)}
         except Exception as e:
             current_app.logger.exception(f"Error in simulate_fix_worker for task {task_id}")
             tasks_dict[task_id]['status'] = 'error'

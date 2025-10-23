@@ -6,11 +6,11 @@ This update focuses on improving user experience, consolidating features, and en
 
 *   **New Feature: Git Patch & Automated Pull Requests**:
     *   **Automated Repository Analysis**: Users can now enter a Git repository URL to perform an automated security analysis using Semgrep and Google's Gemini AI.
-    *   **Interactive Fix Simulation**: Instead of a simple popup, the application now directs users to a dedicated simulation page that displays a clear, side-by-side diff of the proposed fixes.
+    *   **Enhanced Interactive Fix Simulation**: The application now performs a comprehensive simulation. It applies proposed fixes to a temporary clone of the repository, re-scans the modified code for vulnerabilities, and compares the results with the original scan. The simulation page then displays an enhanced diff, showing both the code changes and a clear summary of whether each vulnerability was fixed, remains detected, or if new issues were introduced.
     *   **Patch Generation & Pull Requests**: Users can download the generated fixes as a `.patch` file or, if authenticated with GitHub, automatically create a new branch and open a pull request with the suggested changes.
 *   **UI/UX Enhancements**:
     *   **Informative Findings**: Finding titles in the Git Patch feature now clearly display the file path and line number (`file:line`) for quick identification.
-    *   **Vulnerability Descriptions**: Each finding is now accompanied by a brief, AI-generated description of the vulnerability.
+    *   **Vulnerability Descriptions**: Each finding is now accompanied by a brief, AI-generated description of the vulnerability and a suggested fix.
     *   **Consistent Theming**: Added missing icons to the "Git Patch" and "Git Analysis" cards on the main dashboard for a more uniform look.
 *   **Security Hardening (SAST):** Addressed multiple vulnerabilities found by a Semgrep scan, including fixing disabled TLS verification, securing session cookies, hardening Docker container permissions, and mitigating potential XSS vectors.
 *   **Bug Fix:** Corrected multiple JSON syntax errors in the `translations.json` file that caused application startup failure.
@@ -101,7 +101,7 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
 *   **Network Scanning**: Perform various network scans like Ping, Traceroute, NSLookup, and Nmap scans (including custom scans).
 *   **Web & Domain Analysis**: Enumerate subdomains, analyze email security, and crawl websites for endpoints.
 *   **Vulnerability Scanning**: Run Nikto scans, XXE scans, and Nuclei scans against web targets.
-*   **Git Patch & Automated PRs**: Automatically analyze Git repositories for vulnerabilities, simulate fixes, and generate patches or create pull requests.
+*   **Git Patch & Automated PRs**: Automatically analyze Git repositories for vulnerabilities, apply suggested fixes in a simulated environment with re-scanning to verify effectiveness, and then generate patches or create pull requests.
 *   **Code & Application Security Scanners**: Consolidated interface for Gitleaks (secret detection), Semgrep (SAST), OWASP ZAP (DAST), and Trivy (SCA, Image, IaC) with asynchronous execution and AI analysis.
 *   **IDOR Testing**: A dedicated interface to test for Insecure Direct Object Reference vulnerabilities.
 *   **Metasploit Integration**: Search for Metasploit modules, view module details, and execute exploits.
