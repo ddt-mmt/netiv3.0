@@ -44,24 +44,42 @@ The system is composed of several integrated tools, orchestrated by a CI/CD plat
 ---
 
 (Developer) -> git push -> [GitHub]
-                               |
+                               |\
                                V
 [1. GitHub Actions]      -> Triggers Workflow
    - Checkout Code
    - Run [2. Scanners] (Semgrep, etc.)
    - If findings: POST results to [3. Remediation Bot]
-                               |
+                               |\
                                V
 [3. Remediation Bot]     -> Analyzes results
    - Generates patch (using rules or LLM)
    - Triggers test workflow
-                               |
+                               |\
                                V
 [1. GitHub Actions]      -> Runs [4. Pytest] on patched code
    - If tests pass: Notify Bot
-                               |
+                               |\
                                V
 [3. Remediation Bot]     -> Uses [5. GitHub API] to create Pull Request
-                               |
+                               |\
                                V
 [GitHub]                 -> (Developer) reviews and merges the automated PR.
+
+---
+### Future Enhancements
+---
+
+**1. Consolidated Multi-Tool Scanning (Code & App Scanners Page):**
+   - **Goal:** Allow users to trigger multiple security scanners (Semgrep, Gitleaks, Trivy, etc.) simultaneously with a single click on the "Code & App Scanners" page.
+   - **Benefit:** Streamlines the initial analysis process, providing a more comprehensive overview of a repository's security posture faster.
+   - **Implementation Notes:** Requires UI changes to add a "Run All Scanners" button and backend orchestration to manage parallel execution and aggregation of results from different tools.
+
+**2. Advanced Git Patch with Comprehensive Multi-Tool Verification:**
+   - **Goal:** Extend the Git Patch feature to integrate findings and verification from multiple security tools beyond just Semgrep.
+   - **Benefit:** Provides a more robust and trustworthy automated remediation workflow by ensuring fixes address issues detected by a wider array of security checks.
+   - **Implementation Notes:**
+     - The initial "Analyze Repository" step would run multiple scanners (e.g., Semgrep, Gitleaks, Trivy) and aggregate their findings.
+     - AI (Gemini) would need to generate fixes considering the diverse types of vulnerabilities reported by all integrated tools.
+     - The simulation step would apply these multi-faceted fixes and then re-run *all* relevant scanners to comprehensively verify that all identified vulnerabilities are addressed and no new issues are introduced.
+     - Requires significant changes to finding data structures, AI prompt engineering for multi-tool fix generation, and complex simulation/verification logic.
