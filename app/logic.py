@@ -12,6 +12,10 @@ from pymetasploit3.msfrpc import MsfRpcClient
 import time
 import ipaddress
 import google.generativeai as genai
+from urllib.parse import urlparse
+import requests
+import signal
+import email
 
 def run_command(command):
     try:
