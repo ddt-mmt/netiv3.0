@@ -49,11 +49,11 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
     ```
 
 3.  **Run the Docker Container:**
-    This will run the application in a container, expose it on port 5005, and ensure it restarts automatically.
+    This will run the application in a container, expose it on port 5004, and ensure it restarts automatically.
     ```bash
-    docker run -d -p 5005:5005 --name netiv3-prod --restart unless-stopped netiv3
+    docker run -d -p 5004:5004 --name netiv3-prod --restart unless-stopped netiv3
     ```
-    The application will be available at `http://localhost:5005`.
+    The application will be available at `http://localhost:5004`.
 
 4.  **Metasploit RPC Daemon (Required for Exploit functionality)**:
     The application still requires a running `msfrpcd` instance to connect to. Ensure this is running on a network accessible to the Docker container.
@@ -93,7 +93,7 @@ Using Docker is the recommended method for deploying netiV3. It ensures a consis
 
 5.  **Run the Application:**
     ```bash
-    gunicorn --workers 4 --bind 0.0.0.0:5005 "app:create_app()"
+    gunicorn --workers 4 --bind 0.0.0.0:5004 "app:create_app()"
     ```
 
 ## Core Features
