@@ -141,6 +141,13 @@ The application integrates a suite of well-known security tools to perform its a
 ### Containerization
 *   **Docker**: The application is fully containerized, ensuring a consistent and portable deployment environment.
 
+## Recommended Operating System
+
+For optimal compatibility with the integrated security tools (Nmap, Metasploit, etc.) and Docker, a **Linux-based operating system** is highly recommended:
+
+- **Recommended Distribution**: Ubuntu 22.04 LTS or Debian 12 (or newer).
+- **Compatibility**: The application has been tested primarily on Linux environments. While Docker allows portability, manual installation on non-Linux systems is not supported due to tool dependencies.
+
 ## Hardware Recommendations
 
 To ensure optimal performance and successful builds/deployments of netiV3, consider the following hardware specifications. These recommendations apply whether deploying via Docker, in a Virtual Machine (VM), or on a physical server.
