@@ -176,3 +176,7 @@ The following are planned security improvements that have been identified but no
 
 *   **Implement Read-Only Root Filesystem:** The application container's root filesystem is currently writable. To improve security, it should be set to `read_only: true`. This requires modifying the application to write temporary files (like scan results) to a dedicated `tmpfs` volume instead of the regular filesystem.
 *   **Add Subresource Integrity (SRI):** All external JavaScript resources loaded from CDNs should have an `integrity` attribute. This requires calculating and adding the correct cryptographic hash for each external resource to prevent loading of compromised files.
+## New Features (v3.1)
+- **AI Model Selection**: Support for Gemini models (1.5 Pro, 1.5 Flash, 3.1 Flash Lite) across all analysis modules.
+- **Professional AI Reporting**: Improved report formatting with structured layouts and overall risk assessment indicators.
+- **Exploit Module Enhancement**: AI-driven analysis for Metasploit exploit modules.
