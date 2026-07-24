@@ -1,423 +1,288 @@
 {% extends "main_navigation.html" %}
 
-{% block title %}{{ lang.email_target_analysis_title }}{% endblock %}
+{% block title %}Email Target{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-envelope-open-text"></i> {{ lang.email_target_analysis_title }}</h3>
-        </div>
-        <div class="card-body">
-            <p class="lead">{{ lang.email_target_analysis_description }}</p>
-            <div class="mb-3">
-                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
-                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}">
+<div class="container">
+    <h1>Email Target</h1>
+
+    <div class="form-group mt-4">
+        <label for="apiKey">AI Key:</label>
+        <input type="password" class="form-control" id="apiKey" placeholder="Masukkan AI Key Anda untuk analisis otomatis">
+    </div>
+    <div class="form-group mt-2">
+        <label for="modelName">AI Model:</label>
+        <select class="form-control" id="modelName">
+            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+        </select>
+    </div>
+    <hr>
+    <p class="lead">Gunakan halaman ini untuk menganalisis alamat email target, mencari informasi terkait, dan mengidentifikasi potensi risiko.</p>
+
+    <ul class="nav nav-tabs" id="emailAnalysisTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="basic-email-tab" data-toggle="tab" href="#basic-email" role="tab" aria-controls="basic-email" aria-selected="true">Basic Email Analysis</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="header-analysis-tab" data-toggle="tab" href="#header-analysis" role="tab" aria-controls="header-analysis" aria-selected="false">Email Header Analysis</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="mail-port-scan-tab" data-toggle="tab" href="#mail-port-scan" role="tab" aria-controls="mail-port-scan" aria-selected="false">Mail Server Port Scan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="email-auth-lookup-tab" data-toggle="tab" href="#email-auth-lookup" role="tab" aria-controls="email-auth-lookup" aria-selected="false">Email Auth Lookup</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="emailAnalysisTabContent">
+        <!-- Basic Email Analysis Tab -->
+        <div class="tab-pane fade show active" id="basic-email" role="tabpanel" aria-labelledby="basic-email-tab">
+            <div class="card card-body mt-3">
+                <h2 class="card-title">Analisis Email Dasar</h2>
+                <p class="card-text">Lakukan analisis dasar pada alamat email untuk mendapatkan informasi awal.</p>
+                <hr>
+                <form id="emailScanForm">
+                    <div class="form-group">
+                        <label for="target_email">Target Email:</label>
+                        <input type="email" class="form-control" id="target_email" name="target_email" placeholder="cth: user@example.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Analyze Email</button>
+                </form>
             </div>
-            <hr>
-            <ul class="nav nav-tabs" id="emailAnalysisTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="basic-email-tab" data-toggle="tab" href="#basic-email" role="tab">{{ lang.basic_analysis_tab }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="header-analysis-tab" data-toggle="tab" href="#header-analysis" role="tab">{{ lang.header_analysis_tab }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="mail-port-scan-tab" data-toggle="tab" href="#mail-port-scan" role="tab">{{ lang.mail_server_port_scan_tab }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="email-auth-lookup-tab" data-toggle="tab" href="#email-auth-lookup" role="tab">{{ lang.auth_record_lookup_tab }}</a>
-                </li>
-            </ul>
+        </div>
 
-            <div class="tab-content pt-3" id="emailAnalysisTabContent">
-                <!-- Basic Email Analysis Tab -->
-                <div class="tab-pane fade show active" id="basic-email" role="tabpanel">
-                    <p>{{ lang.basic_analysis_description }}</p>
-                    <form id="emailScanForm">
-                        <div class="mb-3">
-                            <label for="target_email" class="form-label">{{ lang.target_email_label }}</label>
-                            <input type="email" class="form-control" id="target_email" name="target_email" placeholder="{{ lang.target_email_placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">{{ lang.analyze_email_button }}</button>
-                    </form>
-                </div>
+        <!-- Email Header Analysis Tab -->
+        <div class="tab-pane fade" id="header-analysis" role="tabpanel" aria-labelledby="header-analysis-tab">
+            <div class="card card-body mt-3">
+                <h2 class="card-title">Analisis Header Email</h2>
+                <p class="card-text">Tempel header email mentah untuk dianalisis, mengidentifikasi asal, rute, dan potensi tanda-tanda spoofing.</p>
+                <hr>
+                <form id="emailHeaderAnalysisForm">
+                    <div class="form-group">
+                        <label for="raw_headers">Raw Email Headers:</label>
+                        <textarea class="form-control" id="raw_headers" name="raw_headers" rows="10" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Analyze Headers</button>
+                </form>
+            </div>
+        </div>
 
-                <!-- Email Header Analysis Tab -->
-                <div class="tab-pane fade" id="header-analysis" role="tabpanel">
-                    <p>{{ lang.header_analysis_description }}</p>
-                    <form id="emailHeaderAnalysisForm">
-                        <div class="mb-3">
-                            <label for="raw_headers" class="form-label">{{ lang.raw_email_headers_label }}</label>
-                            <textarea class="form-control" id="raw_headers" name="raw_headers" rows="8" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">{{ lang.analyze_headers_button }}</button>
-                    </form>
+        <!-- Mail Server Port Scan Tab -->
+        <div class="tab-pane fade" id="mail-port-scan" role="tabpanel" aria-labelledby="mail-port-scan-tab">
+            <div class="card card-body mt-3">
+                <h2 class="card-title">Mail Server Port Scan</h2>
+                <p class="card-text">Pindai host target untuk port server email umum (SMTP, POP3, IMAP).</p>
+                <div class="alert alert-warning mt-2" role="alert">
+                    ⚠️ **Peringatan:** Ini adalah pemindaian aktif dan akan tercatat di log server target. Gunakan dengan izin.
                 </div>
+                <hr>
+                <form id="mailPortScanForm">
+                    <div class="form-group">
+                        <label for="target_host">Target Host (IP or Domain):</label>
+                        <input type="text" class="form-control" id="target_host" name="target_host" placeholder="cth: mail.example.com atau 192.168.1.100" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Run Port Scan</button>
+                </form>
+            </div>
+        </div>
 
-                <!-- Mail Server Port Scan Tab -->
-                <div class="tab-pane fade" id="mail-port-scan" role="tabpanel">
-                    <p>{{ lang.mail_port_scan_description }}</p>
-                    <div class="alert alert-warning">{{ lang.warning_active_scan }}</div>
-                    <form id="mailPortScanForm">
-                        <div class="mb-3">
-                            <label for="target_host" class="form-label">{{ lang.target_host_label }}</label>
-                            <input type="text" class="form-control" id="target_host" name="target_host" placeholder="{{ lang.target_host_placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-danger w-100">
-                             {{ lang.run_port_scan_button }}
-                             <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Email Authentication Lookup Tab -->
-                <div class="tab-pane fade" id="email-auth-lookup" role="tabpanel">
-                    <p>{{ lang.auth_record_lookup_description }}</p>
-                    <form id="emailAuthLookupForm">
-                        <div class="mb-3">
-                            <label for="target_domain_auth" class="form-label">{{ lang.target_domain_label }}</label>
-                            <input type="text" class="form-control" id="target_domain_auth" name="domain" placeholder="{{ lang.target_domain_placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            {{ lang.lookup_records_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
+        <!-- Email Authentication Lookup Tab -->
+        <div class="tab-pane fade" id="email-auth-lookup" role="tabpanel" aria-labelledby="email-auth-lookup-tab">
+            <div class="card card-body mt-3">
+                <h2 class="card-title">Email Authentication Lookup (SPF, DMARC)</h2>
+                <p class="card-text">Periksa catatan DNS untuk SPF dan DMARC untuk domain yang diberikan.</p>
+                <hr>
+                <form id="emailAuthLookupForm">
+                    <div class="form-group">
+                        <label for="target_domain_auth">Target Domain:</label>
+                        <input type="text" class="form-control" id="target_domain_auth" name="domain" placeholder="cth: example.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Lookup Records</button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Results Area -->
-    <div id="results-area" class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
-            <div id="task-controls" style="display: none;">
-                <span id="task-timer" class="me-3">00:00</span>
-                <button id="cancel-button" class="btn btn-danger btn-sm">
-                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
-                <div id="analysis-in-progress" style="display: none;">
-                    <div class="d-flex align-items-center">
-                        <strong>{{ lang.processing_message }}</strong>
-                    </div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
-                    </div>
-                </div>
-                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
-            </div>
-        </div>
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div id="ai-output-area">
-                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
-                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
-                </div>
-            </div>
-        </div>
+    <div id="scanResults" class="mt-4">
+        <h3>Raw Scan Results</h3>
+        <pre id="raw-output" style="background-color: #f8f9fa; color: #333; padding: 1rem; border-radius: 6px; white-space: pre-wrap; border: 1px solid #dee2e6;"></pre>
+    </div>
+    <div id="aiAnalysisResult" class="mt-4">
+        <h3>Hasil Analisis AI</h3>
+        <pre id="ai-output" style="background-color: #e9f5e9; color: #333; padding: 1rem; border-radius: 6px; white-space: pre-wrap;"></pre>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-    const lang = {{ lang | tojson }};
-$(document).ready(function() {
-    // --- State Management ---
-    let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-    let currentAiTask = { intervalId: null, taskId: null, startTime: null }; // New state for AI task
-
-    function clearTaskState() {
-        if (currentTask.intervalId) clearInterval(currentTask.intervalId);
-        if (currentTask.submitButton) {
-            const button = $(currentTask.submitButton);
-            button.prop('disabled', false).find('.button-text').show();
-            button.find('.spinner-border').hide();
-        }
-        $('#task-controls').hide();
-        currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
-    }
-
-    function clearAiTaskState() {
-        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
-        currentAiTask = { intervalId: null, taskId: null, startTime: null };
-        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
-    }
-
-    function checkAndHideProgressBar() {
-        if (!currentTask.taskId && !currentAiTask.taskId) {
-            $('#analysis-in-progress').hide();
-        }
-    }
-
-    function formatTime(seconds) {
-        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const sec = (seconds % 60).toString().padStart(2, '0');
-        return `${min}:${sec}`;
-    }
-
-    // --- API Communication ---
-    function pollTaskStatus(taskId, analysisTitle, analysisMethod, analysisTarget) {
-        const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
-        $('#task-timer').text(formatTime(elapsedTime));
-        $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
-
-        $.ajax({
-            url: `/task/status/${taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.status === 'completed') {
-                    var resultText = response.result.stdout || "";
-                    // Raw scan data is no longer shown on the UI for successful scans.
-                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
-                    clearTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
-                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
-                    clearTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
-                    clearTaskState();
-                }
-            },
-            error: function(xhr) {
-                stopHackingAnimation();
-                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`).show();
-                clearTaskState();
+    window.onload = function() {
+        (function($) {
+            if (typeof $ === 'undefined' && typeof window.jQuery !== 'undefined') {
+                $ = window.jQuery;
             }
-        });
-    }
-
-    function pollAiTaskStatus() {
-        if (!currentAiTask.taskId) return;
-
-        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
-        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
-        console.log(`Polling AI task ${currentAiTask.taskId}. Elapsed: ${formatTime(elapsedTime)}`);
-
-        $.ajax({
-            url: `/task/status/${currentAiTask.taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.status === 'completed') {
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis.")));
-                    console.log("AI task completed.", response.result);
-                    clearAiTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
-                    $('#ai-output').html(`<span class="text-danger">Error AI: ${errorText}</span>`);
-                    console.error("AI task error.", response.result);
-                    clearAiTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
-                    console.warn("AI task cancelled.");
-                    clearAiTaskState();
-                }
-            },
-            error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status} ${xhr.responseText}</span>`);
-                console.error("Error polling AI status.", xhr);
-                clearAiTaskState();
+            if (typeof $ === 'undefined') {
+                console.error('jQuery is still not defined. Script cannot run.');
+                return;
             }
-        });
-    }
+            $(document).ready(function() {
+            function runAiAnalysis(rawResults) {
+                const apiKey = $('#apiKey').val();
+                const modelName = $('#modelName').val();
 
-    function cancelCurrentTask() {
-        let tasksToCancel = [];
-        if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
-        if (currentAiTask.taskId) tasksToCancel.push(currentAiTask.taskId);
+                if (!apiKey) {
+                    $('#ai-output').html('<span class="text-danger">Please enter your AI Key to run the analysis.</span>');
+                    return;
+                }
 
-        if (tasksToCancel.length > 0) {
-            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
-            $('#analysis-in-progress strong').text(lang.cancelling_message);
+                $('#ai-output').html('Generating AI analysis... Please wait.');
+                $.ajax({
+                    url: '/analyze_results',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ api_key: apiKey, model_name: modelName, results: rawResults, language: {{ lang_code|tojson }} }),
+                    success: function(response) {
+                        if (response.error) {
+                            $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
+                        }
+                        else {
+                            $('#ai-output').html(response.analysis);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#ai-output').html('<span class="text-danger">Failed to fetch AI analysis: ' + xhr.responseText + '</span>');
+                    }
+                });
+            }
 
-            let cancelPromises = tasksToCancel.map(taskId => {
-                return $.ajax({
-                    url: `/task/cancel/${taskId}`,
-                    type: 'POST'
-                }).fail(function(xhr) {
-                    console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
-                    // Optionally update a specific error message for this task
+            // Handler for Basic Email Analysis Form
+            document.getElementById('emailScanForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const targetEmail = document.getElementById('target_email').value;
+
+                $('#raw-output').html('Running basic email analysis...');
+                $('#ai-output').html(''); // Clear previous AI analysis
+
+                fetch('/email_target', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ target_email: targetEmail }),
+                })
+                .then(response => {
+                    console.log('DEBUG: fetch response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('DEBUG: fetch data:', data);
+                    if (data.error) {
+                        $('#raw-output').html('<span class="text-danger">Error: ' + data.error + '</span>');
+                    } else {
+                        const rawResults = JSON.stringify(data.results, null, 2);
+                        $('#raw-output').html('<pre>' + rawResults + '</pre>');
+                        runAiAnalysis(rawResults);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    $('#raw-output').html('<p style="color: red;">Error during analysis: ' + error + '</p>');
                 });
             });
 
-            $.when(...cancelPromises).always(function() {
-                // Polling functions will eventually pick up the 'cancelled' status
-                // and clear their respective states. The checkAndHideProgressBar will then hide the progress bar.
-                // Re-enable button and reset text after all attempts
-                $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+            // Handler for Email Header Analysis Form
+            document.getElementById('emailHeaderAnalysisForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const rawHeaders = document.getElementById('raw_headers').value;
+
+                $('#raw-output').html('Running email header analysis...');
+                $('#ai-output').html('');
+
+                fetch('/run_email_header_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ raw_headers: rawHeaders }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        $('#raw-output').html('<span class="text-danger">Error: ' + data.error + '</span>');
+                    } else {
+                        const rawResults = JSON.stringify(data.result, null, 2);
+                        $('#raw-output').html('<pre>' + rawResults + '</pre>');
+                        runAiAnalysis(data.ai_input);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    $('#raw-output').html('<p style="color: red;">Error during analysis: ' + error + '</p>');
+                });
             });
-        } else {
-            alert(lang.no_running_tasks_to_cancel);
-        }
-    }
 
-    function runAiAnalysis(rawResults, analysisTitle, analysisMethod, analysisTarget) {
-        console.log("runAiAnalysis called.");
-        const apiKey = $('#apiKey').val();
-        console.log("DEBUG: API Key value read from input field: '" + apiKey + "'"); // Tambahan untuk Debug
-        if (!apiKey) {
-            $('#ai-output').html(`<span class="text-warning">${lang.ai_key_not_entered_ai_skipped}</span>`);
-            console.warn("AI Key is missing. Skipping AI analysis.");
-            return;
-        }
-        $('#ai-output').text(lang.starting_ai_analysis).show(); // Ensure AI output is visible and show initial message
-        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
-        $('#analysis-in-progress').show(); // Show progress bar for AI analysis
-        console.log("Starting AI analysis request.");
+            // Handler for Mail Server Port Scan Form
+            document.getElementById('mailPortScanForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const targetHost = document.getElementById('target_host').value;
 
-        clearAiTaskState(); // Clear any previous AI task state
+                $('#raw-output').html('Running mail server port scan...');
+                $('#ai-output').html('');
 
-        // Construct header and store it in currentAiTask
-        let header = `### ${analysisTitle || lang.ai_analysis_title}
+                fetch('/run_mail_server_port_scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ target_host: targetHost }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        $('#raw-output').html('<span class="text-danger">Error: ' + data.error + '</span>');
+                    } else {
+                        const rawResults = JSON.stringify(data.result, null, 2);
+                        $('#raw-output').html('<pre>' + rawResults + '</pre>');
+                        runAiAnalysis(rawResults);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    $('#raw-output').html('<p style="color: red;">Error during analysis: ' + error + '</p>');
+                });
+            });
 
-`;
-        header += `**Tanggal & Waktu:** ${new Date().toLocaleString()}
-`;
-        if (analysisMethod) header += `**Metode:** ${analysisMethod}
-`;
-        if (analysisTarget) header += `**Target:** ${analysisTarget}
+            // Handler for Email Authentication Lookup Form
+            document.getElementById('emailAuthLookupForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const targetDomainAuth = document.getElementById('target_domain_auth').value;
 
-`;
-        header += `---
+                $('#raw-output').html('Running email authentication lookup...');
+                $('#ai-output').html('');
 
-`; // Separator
-        currentAiTask.header = header; // Store the constructed header
-
-        console.log("DEBUG: Preparing to make AJAX call to /analyze_results with key: '" + apiKey + "'"); // Tambahan untuk Debug
-        $.ajax({
-            url: '/analyze_results',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ api_key: apiKey, results: rawResults, language: '{{ lang_code }}' }),
-            success: function(response) {
-                console.log("AI analysis initial response:", response);
-                if (response.task_id) {
-                    currentAiTask.taskId = response.task_id;
-                    currentAiTask.startTime = Date.now();
-                    currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
-                    console.log(`AI task started with ID: ${response.task_id}`);
-                } else if (response.error) {
-                     $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`).show();
-                     checkAndHideProgressBar();
-                     console.error("Error starting AI task:", response.error);
-                } else {
-                    // Use the stored header
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
-                    checkAndHideProgressBar();
-                    console.warn("AI analysis response without task_id or error.", response);
-                }
-            },
-            error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`).show();
-                checkAndHideProgressBar();
-                console.error("Failed to send AI analysis request.", xhr);
-            }
+                fetch('/run_email_auth_lookup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ domain: targetDomainAuth }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        $('#raw-output').html('<span class="text-danger">Error: ' + data.error + '</span>');
+                    } else {
+                        const rawResults = JSON.stringify(data.result, null, 2);
+                        $('#raw-output').html('<pre>' + rawResults + '</pre>');
+                        runAiAnalysis(rawResults);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    $('#raw-output').html('<p style="color: red;">Error during analysis: ' + error + '</p>');
+                });
+            });
         });
-    }
-
-    // --- Event Handlers for main analysis forms ---
-    $('#emailScanForm, #emailHeaderAnalysisForm, #mailPortScanForm, #emailAuthLookupForm').on('submit', function(event) {
-        console.log("Form analysisForm submitted.");
-        event.preventDefault();
-        if (currentTask.taskId) {
-            alert(lang.task_already_running_wait_cancel);
-            return;
-        }
-        const form = $(this);
-        const button = form.find('button[type="submit"]');
-        const formId = form.attr('id');
-        let data = {};
-        form.serializeArray().forEach(item => { data[item.name] = item.value; });
-
-        let url = '';
-        let analysisMethod = '';
-        let analysisTarget = '';
-
-        switch (formId) {
-            case 'emailScanForm':
-                url = '/email_target';
-                analysisMethod = lang.basic_analysis_tab;
-                analysisTarget = data.target_email;
-                break;
-            case 'emailHeaderAnalysisForm':
-                url = '/run_email_header_analysis';
-                analysisMethod = lang.header_analysis_tab;
-                analysisTarget = data.raw_headers.substring(0, 50) + (data.raw_headers.length > 50 ? '...' : '');
-                break;
-            case 'mailPortScanForm':
-                url = '/run_mail_server_port_scan';
-                analysisMethod = lang.mail_server_port_scan_tab;
-                analysisTarget = data.target_host;
-                break;
-            case 'emailAuthLookupForm':
-                url = '/run_email_auth_lookup';
-                analysisMethod = lang.auth_record_lookup_tab;
-                analysisTarget = data.domain;
-                break;
-        }
-
-        currentTask.submitButton = button;
-        currentTask.analysisTitle = "Email Target Analysis";
-        currentTask.analysisMethod = analysisMethod;
-        currentTask.analysisTarget = analysisTarget;
-
-        button.prop('disabled', true);
-        button.find('.spinner-border').show();
-        $('#analysis-in-progress').show(); // Show loading animation
-        $('#analysis-in-progress strong').text(lang.starting_task);
-        $('#output-display').hide(); // Hide raw output display
-        $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
-        $('#task-controls').show(); // Show task controls immediately
-        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel'); // Enable cancel button immediately
-        console.log("Main analysis form submitted.", data);
-
-        $.ajax({
-            url: url,
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function(response) {
-                console.log("Main task initial response:", response);
-                if (response.task_id) {
-                    currentTask.taskId = response.task_id;
-                    currentTask.startTime = Date.now();
-                    $('#task-controls').show();
-                    $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
-                    currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, currentTask.analysisMethod, currentTask.analysisTarget), 2000);
-                    console.log(`Main task started with ID: ${response.task_id}`);
-                } else {
-                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
-                    console.error("Error starting main task:", response);
-                    clearTaskState();
-                }
-            },
-            error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`).show();
-                console.error("Failed to send main task request.", xhr);
-                clearTaskState();
-            }
-        });
-    });
-
-    $('#cancel-button').on('click', cancelCurrentTask);
-
-    // Bootstrap 4 tab activation
-    var hash = window.location.hash;
-    if (hash) {
-        $('#emailAnalysisTab a[href="' + hash + '"]').tab('show');
-    }
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        window.location.hash = e.target.hash;
-    });
-});
-</script>
-{% endblock %}
+    })(jQuery);
+};
+</script>{% endblock %}

@@ -1,468 +1,346 @@
 {% extends "main_navigation.html" %}
 
-{% block title %}{{ lang.net_analysis_title }}{% endblock %}
+{% block title %}Net Analysis{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-network-wired"></i> {{ lang.net_analysis_title }}</h3>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
-                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}">
-            </div>
-            <hr>
+<div class="container">
+    <h1>Net Analysis</h1>
 
-            <!-- Bootstrap 4 Nav Tabs -->
-            <ul class="nav nav-tabs" id="netAnalysisTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="ping-tab" data-toggle="tab" href="#ping" role="tab" aria-controls="ping" aria-selected="true">{{ lang.ping_tab }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="traceroute-tab" data-toggle="tab" href="#traceroute" role="tab" aria-controls="traceroute" aria-selected="false">Traceroute</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="nslookup-tab" data-toggle="tab" href="#nslookup" role="tab" aria-controls="nslookup" aria-selected="false">{{ lang.nslookup_tab }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link font-weight-bold" id="nmap-tab" data-toggle="tab" href="#nmap" role="tab" aria-controls="nmap" aria-selected="false">{{ lang.nmap_tab }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="dns-spoof-tab" data-toggle="tab" href="#dns-spoof" role="tab" aria-controls="dns-spoof" aria-selected="false">{{ lang.dns_spoof_tab }}</a>
-                </li>
-                {% for tool in custom_tools %}
-                <li class="nav-item">
-                    <a class="nav-link" id="{{ tool.id }}-tab" data-toggle="tab" href="#{{ tool.id }}" role="tab">{{ tool.tab_name[lang_code] }}</a>
-                </li>
-                {% endfor %}
-            </ul>
-
-            <!-- Tab Content -->
-            <div class="tab-content pt-3" id="netAnalysisTabContent">
-                <!-- Ping Tab -->
-                <div class="tab-pane fade show active" id="ping" role="tabpanel">
-                    <p class="card-text">{{ lang.ping_description }}</p>
-                    <form class="analysisForm" data-url="/run_ping">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_ip_domain_label }}</label>
-                            <input type="text" class="form-control" name="target" placeholder="cth: google.com atau 8.8.8.8" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            {{ lang.run_analysis_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <!-- Other tabs follow the same structure... -->
-                <div class="tab-pane fade" id="traceroute" role="tabpanel">
-                    <p class="card-text">{{ lang.traceroute_description }}</p>
-                    <form class="analysisForm" data-url="/run_traceroute">
-                         <div class="mb-3">
-                            <label class="form-label">{{ lang.target_ip_domain_label }}</label>
-                            <input type="text" class="form-control" name="target" placeholder="cth: google.com atau 8.8.8.8" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            {{ lang.run_analysis_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <div class="tab-pane fade" id="nslookup" role="tabpanel">
-                    <p class="card-text">{{ lang.nslookup_description }}</p>
-                    <form class="analysisForm" data-url="/run_nslookup">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_domain_label }}</label>
-                            <input type="text" class="form-control" name="target" placeholder="{{ lang.target_domain_placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            {{ lang.run_analysis_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <div class="tab-pane fade" id="nmap" role="tabpanel">
-                    <p class="card-text">{{ lang.nmap_description }}</p>
-                    <form id="nmapForm" class="analysisForm" data-url="/run_nmap">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_ip_domain_subnet_label }}</label>
-                            <input type="text" class="form-control" name="target" placeholder="cth: google.com, 192.168.1.1, 192.168.1.0/24" required>
-                        </div>
-                        <hr>
-                        <label class="form-label">{{ lang.scan_method_label }}</label>
-                        <div class="form-check"><input class="form-check-input" type="radio" name="scan_type" value="ping_scan" checked><label class="form-check-label"><strong>{{ lang.ping_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.ping_scan_description }}</small></label></div>
-                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="quick_scan"><label class="form-check-label"><strong>{{ lang.quick_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.quick_scan_description }}</small></label></div>
-                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="intense_scan"><label class="form-check-label"><strong>{{ lang.intense_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.intense_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_intense_scan_warning }}</small></label></div>
-                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="udp_scan"><label class="form-check-label"><strong>{{ lang.udp_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.udp_scan_description }}</small></label></div>
-                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="vuln_scan"><label class="form-check-label"><strong>{{ lang.vuln_scan_title }}</strong><small class="form-text text-muted d-block">{{ lang.vuln_scan_description }}</small><small class="text-danger d-block">{{ lang.nmap_vuln_scan_warning }}</small></label></div>
-                        <div class="alert alert-info mt-3">{{ lang.nmap_duration_warning | default('Note: Intense and Vulnerability scans can take a significant amount of time (potentially hours) depending on the target.') }}</div>
-                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="ssh_audit"><label class="form-check-label"><strong>{{ lang.ssh_security_audit_title }}</strong><small class="form-text text-muted d-block">{{ lang.ssh_security_audit_description }}</small></label></div>
-                        
-                        <!-- Custom Scan Option -->
-                        <div class="form-check mt-2"><input class="form-check-input" type="radio" name="scan_type" value="custom_scan"><label class="form-check-label"><strong>{{ lang.custom_scan_title | default('Custom Scan') }}</strong><small class="form-text text-muted d-block">{{ lang.custom_scan_description | default('Enter custom ports and arguments.') }}</small></label></div>
-                        
-                        <div id="nmap-custom-options" class="mt-3" style="display: none;">
-                            <div class="mb-3">
-                                <label for="nmap-custom-ports" class="form-label">{{ lang.custom_ports_label | default('Custom Ports') }}</label>
-                                <input type="text" class="form-control" id="nmap-custom-ports" name="custom_ports" placeholder="cth: 22,80,443 atau 1-1024">
-                                <small class="form-text text-muted">{{ lang.custom_ports_description | default('Leave blank to use Nmap default port scanning behavior.') }}</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="nmap-custom-args" class="form-label">{{ lang.custom_arguments_label | default('Custom Arguments') }}</label>
-                                <input type="text" class="form-control" id="nmap-custom-args" name="custom_args" placeholder="cth: -sV --script http-title --open">
-                                <small class="form-text text-muted">{{ lang.custom_arguments_description | default('Enter any additional Nmap flags. The target is added automatically.') }}</small>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-danger w-100 mt-3">
-                            {{ lang.run_nmap_analysis_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <div class="tab-pane fade" id="dns-spoof" role="tabpanel">
-                    <div class="alert alert-danger"><b>{{ lang.dns_spoof_warning_strong }}</b> {{ lang.dns_spoof_warning_text }}</div>
-                    <form id="dnsSpoofForm" class="analysisForm" data-url="/run_dns_spoof">
-                        <div class="mb-3"><label class="form-label">{{ lang.victim_ip_label }}</label><input type="text" class="form-control" name="victim_ip" placeholder="{{ lang.victim_ip_placeholder }}" required></div>
-                        <div class="mb-3"><label class="form-label">{{ lang.target_domain_label_short }}</label><input type="text" class="form-control" name="target_domain" placeholder="{{ lang.target_domain_placeholder_short }}" required></div>
-                        <div class="mb-3"><label class="form-label">{{ lang.fake_ip_label }}</label><input type="text" class="form-control" name="fake_ip" placeholder="{{ lang.fake_ip_placeholder }}" required></div>
-                        <button type="submit" class="btn btn-danger w-100">
-                            {{ lang.run_dns_spoof_test_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                {% for tool in custom_tools %}
-                <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
-                     <h5>{{ tool.tab_name[lang_code] }}</h5>
-                     <p>{{ tool.description[lang_code] }}</p>
-                     {% if tool.warning %}<div class="alert alert-warning mt-2"><b>{{ lang.tool_warning_label }}</b> {{ tool.warning[lang_code] }}</div>{% endif %}
-                     <form class="customAnalysisForm analysisForm" data-url="/run_custom_scan" data-tool-id="{{ tool.id }}">
-                        <div class="mb-3"><label class="form-label">{{ tool.input_label[lang_code] }}:</label><input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required></div>
-                        <button type="submit" class="btn btn-info w-100">
-                            {{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                {% endfor %}
-            </div>
-    <div id="results-area" class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
-            <div id="task-controls" style="display: none;">
-                <span id="task-timer" class="me-3">00:00</span>
-                <button id="cancel-button" class="btn btn-danger btn-sm">
-                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
-                <div id="analysis-in-progress" style="display: none;">
-                    <div class="d-flex align-items-center">
-                        <strong>{{ lang.processing_message }}</strong>
-                    </div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
-                    </div>
-                </div>
-                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
-            </div>
-        </div>
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div id="ai-output-area">
-                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
-                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
-                </div>
-            </div>
-        </div>
+    <div class="form-group mt-4">
+        <label for="apiKey">AI Key:</label>
+        <input type="password" class="form-control" id="apiKey" placeholder="Masukkan AI Key Anda untuk analisis otomatis">
     </div>
+    <div class="form-group mt-2">
+        <label for="modelName">AI Model:</label>
+        <select class="form-control" id="modelName">
+            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+        </select>
+    </div>
+
+    <hr>
+    <p>Pilih alat analisis jaringan dari tab di bawah ini.</p>
+
+    <ul class="nav nav-tabs" id="netAnalysisTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="ping-tab" data-toggle="tab" href="#ping" role="tab" aria-controls="ping" aria-selected="true">Ping</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="traceroute-tab" data-toggle="tab" href="#traceroute" role="tab" aria-controls="traceroute" aria-selected="false">Traceroute</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nslookup-tab" data-toggle="tab" href="#nslookup" role="tab" aria-controls="nslookup" aria-selected="false">NSLookup</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" id="nmap-tab" data-toggle="tab" href="#nmap" role="tab" aria-controls="nmap" aria-selected="false">Nmap</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="dns-spoof-tab" data-toggle="tab" href="#dns-spoof" role="tab" aria-controls="dns-spoof" aria-selected="false">DNS Spoof</a>
+        </li>
+        {% for tool in custom_tools %}
+        <li class="nav-item">
+            <a class="nav-link" id="{{ tool.id }}-tab" data-toggle="tab" href="#{{ tool.id }}" role="tab">{{ tool.tab_name[lang_code] }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content" id="netAnalysisTabContent">
+        <!-- Ping Tab -->
+        <div class="tab-pane fade show active" id="ping" role="tabpanel" aria-labelledby="ping-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ lang.ping_description }}</p>
+                <hr>
+                <form class="analysisForm" data-url="/run_ping">
+                    <div class="form-group">
+                        <label for="pingTarget">{{ lang.target_ip_domain_label }}</label>
+                        <input type="text" class="form-control" name="target" placeholder="cth: google.com atau 8.8.8.8" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ lang.run_analysis_button }}</button>
+                </form>
+            </div>
         </div>
+        <!-- Traceroute Tab -->
+        <div class="tab-pane fade" id="traceroute" role="tabpanel" aria-labelledby="traceroute-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ lang.traceroute_description }}</p>
+                <hr>
+                <form class="analysisForm" data-url="/run_traceroute">
+                    <div class="form-group">
+                        <label for="tracerouteTarget">{{ lang.target_ip_domain_label }}</label>
+                        <input type="text" class="form-control" name="target" placeholder="cth: google.com atau 8.8.8.8" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ lang.run_analysis_button }}</button>
+                </form>
+            </div>
+        </div>
+        <!-- NSLookup Tab -->
+        <div class="tab-pane fade" id="nslookup" role="tabpanel" aria-labelledby="nslookup-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ lang.nslookup_description }}</p>
+                <hr>
+                <form class="analysisForm" data-url="/run_nslookup">
+                    <div class="form-group">
+                        <label for="nslookupTarget">Target Domain:</label>
+                        <input type="text" class="form-control" name="target" placeholder="cth: google.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ lang.run_analysis_button }}</button>
+                </form>
+            </div>
+        </div>
+        <!-- Nmap Tab -->
+        <div class="tab-pane fade" id="nmap" role="tabpanel" aria-labelledby="nmap-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ lang.nmap_description }}</p>
+                <hr>
+                <form id="nmapForm">
+                    <div class="form-group">
+                        <label for="nmapTarget">{{ lang.target_ip_domain_subnet_label }}</label>
+                        <input type="text" class="form-control" id="nmapTarget" name="target" placeholder="cth: google.com, 192.168.1.1, 192.168.1.0/24" required>
+                    </div>
+                    <hr>
+                    <label>{{ lang.scan_method_label }}</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="scan_type" id="pingScan" value="ping_scan" checked>
+                        <label class="form-check-label" for="pingScan">
+                            <strong>{{ lang.ping_scan_title }}</strong>
+                        </label>
+                        <small class="form-text text-muted">{{ lang.ping_scan_description }}</small>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="scan_type" id="quickScan" value="quick_scan">
+                        <label class="form-check-label" for="quickScan">
+                            <strong>{{ lang.quick_scan_title }}</strong>
+                        </label>
+                        <small class="form-text text-muted">{{ lang.quick_scan_description }}</small>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="scan_type" id="intenseScan" value="intense_scan">
+                        <label class="form-check-label" for="intenseScan">
+                            <strong>{{ lang.intense_scan_title }}</strong>
+                        </label>
+                        <small class="form-text text-muted">{{ lang.intense_scan_description }}</small>
+                        <small class="text-danger">⚠️ **Peringatan:** Pemindaian ini sangat "berisik" dan dapat memicu sistem keamanan (IPS/WAF).</small>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="scan_type" id="udpScan" value="udp_scan">
+                        <label class="form-check-label" for="udpScan">
+                            <strong>{{ lang.udp_scan_title }}</strong>
+                        </label>
+                        <small class="form-text text-muted">{{ lang.udp_scan_description }}</small>
+                        <small class="text-danger">⚠️ **Peringatan:** Pemindaian ini dapat memicu sistem keamanan (IPS/WAF).</small>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="scan_type" id="vulnScan" value="vuln_scan">
+                        <label class="form-check-label" for="vulnScan">
+                            <strong>{{ lang.vuln_scan_title }}</strong>
+                        </label>
+                        <small class="form-text text-muted">{{ lang.vuln_scan_description }}</small>
+                        <small class="text-danger">⚠️ **Peringatan:** Pemindaian ini sangat agresif dan berisiko tinggi untuk diblokir.</small>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="scan_type" id="sshAudit" value="ssh_audit">
+                        <label class="form-check-label" for="sshAudit">
+                            <strong>SSH Security Audit</strong>
+                        </label>
+                        <small class="form-text text-muted">Checks for weak SSH algorithms and authentication methods on port 22.</small>
+                        <small class="text-warning">⚠️ **Peringatan:** Ini adalah pemindaian aktif dan akan tercatat di log server target.</small>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-block mt-4">{{ lang.run_nmap_analysis_button }}</button>
+                </form>
+            </div>
+        </div>
+        <!-- DNS Spoof Tab -->
+        <div class="tab-pane fade" id="dns-spoof" role="tabpanel" aria-labelledby="dns-spoof-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">Lakukan uji coba DNS Spoofing untuk mengarahkan trafik dari korban ke server palsu.</p>
+                <div class="alert alert-danger" role="alert">
+                    ⚠️ <strong>PERINGATAN KERAS:</strong> Gunakan fitur ini secara bertanggung jawab. Pastikan Anda memiliki izin eksplisit untuk menguji target. Menjalankan ini pada jaringan yang tidak Anda miliki adalah ilegal.
+                </div>
+                <hr>
+                <form id="dnsSpoofForm">
+                    <div class="form-group">
+                        <label for="victimIp">IP Korban</label>
+                        <input type="text" class="form-control" id="victimIp" name="victim_ip" placeholder="Contoh: 192.168.1.101" required>
+                        <small class="form-text text-muted">IP address dari mesin target di jaringan lokal Anda.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="targetDomain">Domain Target</label>
+                        <input type="text" class="form-control" id="targetDomain" name="target_domain" placeholder="Contoh: www.example.com" required>
+                        <small class="form-text text-muted">Domain yang akan di-spoof.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="fakeIp">IP Palsu (Redirect)</label>
+                        <input type="text" class="form-control" id="fakeIp" name="fake_ip" placeholder="Contoh: 192.168.1.100" required>
+                        <small class="form-text text-muted">IP address server penyerang (server ini) tempat korban akan diarahkan.</small>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-block mt-4">Jalankan DNS Spoof Test</button>
+                </form>
+            </div>
+        </div>
+        <!-- Custom Tools Panes -->
+        {% for tool in custom_tools %}
+        <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ tool.description[lang_code] }}</p>
+                {% if tool.warning %}
+                <div class="alert alert-warning mt-2" role="alert">
+                    ⚠️ **Peringatan:** {{ tool.warning[lang_code] }}
+                </div>
+                {% endif %}
+                <hr>
+                <form class="customAnalysisForm" data-tool-id="{{ tool.id }}">
+                    <div class="form-group">
+                        <label>{{ tool.input_label[lang_code] }}:</label>
+                        <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Run {{ tool.tab_name[lang_code] }}</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="aiAnalysisResult" class="mt-4">
+        <h3>Hasil Analisis AI</h3>
+        <pre id="ai-output" style="background-color: #e9f5e9; color: #333; padding: 1rem; border-radius: 6px; white-space: pre-wrap;"></pre>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    console.log("Script tag is being executed.");
-    const lang = {{ lang | tojson }};
 $(document).ready(function() {
-    console.log("Document is ready.");
-    // --- State Management ---
-    let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-    let currentAiTask = { intervalId: null, taskId: null, startTime: null }; // New state for AI task
-
-    function clearTaskState() {
-        if (currentTask.intervalId) clearInterval(currentTask.intervalId);
-        if (currentTask.submitButton) {
-            const button = $(currentTask.submitButton);
-            button.prop('disabled', false).find('.button-text').show();
-            button.find('.spinner-border').hide();
-        }
-        $('#task-controls').hide();
-        currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
-    }
-
-    function clearAiTaskState() {
-        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
-        currentAiTask = { intervalId: null, taskId: null, startTime: null };
-        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
-    }
-
-    function checkAndHideProgressBar() {
-        if (!currentTask.taskId && !currentAiTask.taskId) {
-            $('#analysis-in-progress').hide();
-        }
-    }
-
-    function formatTime(seconds) {
-        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const sec = (seconds % 60).toString().padStart(2, '0');
-        return `${min}:${sec}`;
-    }
-
-    // --- API Communication ---
-    function pollTaskStatus(taskId, analysisTitle, analysisMethod, analysisTarget) {
-        const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
-        $('#task-timer').text(formatTime(elapsedTime));
-        $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
-
-        $.ajax({
-            url: `/task/status/${taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.status === 'completed') {
-                    var resultText = response.result.stdout || "";
-                    // Raw scan data is no longer shown on the UI for successful scans.
-                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
-                    clearTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
-                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
-                    clearTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
-                    clearTaskState();
-                }
-            },
-            error: function(xhr, status, error) {
-                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${error}</span>`).show();
-                clearTaskState();
-            }
-        });
-    }
-
-    function pollAiTaskStatus() {
-        if (!currentAiTask.taskId) return;
-
-        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
-        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
-        console.log(`Polling AI task ${currentAiTask.taskId}. Elapsed: ${formatTime(elapsedTime)}`);
-
-        $.ajax({
-            url: `/task/status/${currentAiTask.taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.status === 'completed') {
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
-                    console.log("AI task completed.", response.result);
-                    clearAiTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
-                    $('#ai-output').html(`<span class="text-danger">Error AI: ${errorText}</span>`);
-                    console.error("AI task error.", response.result);
-                    clearAiTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
-                    console.warn("AI task cancelled.");
-                    clearAiTaskState();
-                }
-            },
-            error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status} ${xhr.responseText}</span>`);
-                console.error("Error polling AI status.", xhr);
-                clearAiTaskState();
-            }
-        });
-    }
-
-    function cancelCurrentTask() {
-        let tasksToCancel = [];
-        if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
-        if (currentAiTask.taskId) tasksToCancel.push(currentAiTask.taskId);
-
-        if (tasksToCancel.length > 0) {
-            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
-            $('#analysis-in-progress strong').text(lang.cancelling_message);
-
-            let cancelPromises = tasksToCancel.map(taskId => {
-                return $.ajax({
-                    url: `/task/cancel/${taskId}`,
-                    type: 'POST'
-                }).fail(function(xhr) {
-                    console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
-                    // Optionally update a specific error message for this task
-                });
-            });
-
-            $.when(...cancelPromises).always(function() {
-                // Polling functions will eventually pick up the 'cancelled' status
-                // and clear their respective states. The checkAndHideProgressBar will then hide the progress bar.
-                // Re-enable button and reset text after all attempts
-                $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
-            });
-        } else {
-            alert(lang.no_running_tasks_to_cancel);
-        }
-    }
-
-    function runAiAnalysis(rawResults, analysisTitle, analysisMethod, analysisTarget) {
-        console.log("runAiAnalysis called.");
+    function runAiAnalysis(rawResults) {
         const apiKey = $('#apiKey').val();
-        console.log("DEBUG: API Key value read from input field: '" + apiKey + "'"); // Tambahan untuk Debug
+        const modelName = $('#modelName').val();
+
         if (!apiKey) {
-            $('#ai-output').html(`<span class="text-warning">${lang.ai_key_not_entered_ai_skipped}</span>`);
-            console.warn("AI Key is missing. Skipping AI analysis.");
+            $('#ai-output').html('<span class="text-danger">Please enter your AI Key to run the analysis.</span>');
             return;
         }
-        $('#ai-output').text(lang.starting_ai_analysis).show(); // Ensure AI output is visible and show initial message
-        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
-        $('#analysis-in-progress').show(); // Show progress bar for AI analysis
-        console.log("Starting AI analysis request.");
 
-        clearAiTaskState(); // Clear any previous AI task state
-
-        // Construct header and store it in currentAiTask
-        let header = `### ${analysisTitle || lang.ai_analysis_title}\n\n`;
-        header += `**Tanggal & Waktu:** ${new Date().toLocaleString()}\n`;
-        if (analysisMethod) header += `**Metode:** ${analysisMethod}\n`;
-        if (analysisTarget) header += `**Target:** ${analysisTarget}\n\n`;
-        header += `---`;
-        currentAiTask.header = header;
-
+        $('#ai-output').html('Generating AI analysis... Please wait.');
         $.ajax({
             url: '/analyze_results',
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ api_key: apiKey, results: rawResults, language: '{{ lang_code }}' }),
+            data: JSON.stringify({ api_key: apiKey, results: rawResults, language: {{ lang_code|tojson }}, model_name: modelName }),
             success: function(response) {
-                console.log("AI analysis initial response:", response);
-                if (response.task_id) {
-                    currentAiTask.taskId = response.task_id;
-                    currentAiTask.startTime = Date.now();
-                    currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
-                    console.log(`AI task started with ID: ${response.task_id}`);
-                } else if (response.error) {
-                     $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`).show();
-                     checkAndHideProgressBar();
-                     console.error("Error starting AI task:", response.error);
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
                 } else {
-                    // Use the stored header
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
-                    checkAndHideProgressBar();
-                    console.warn("AI analysis response without task_id or error.", response);
+                    $('#ai-output').html(response.analysis);
                 }
             },
             error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`).show();
-                checkAndHideProgressBar();
-                console.error("Failed to send AI analysis request.", xhr);
+                $('#ai-output').html('<span class="text-danger">Failed to fetch AI analysis: ' + xhr.responseText + '</span>');
             }
         });
     }
 
-    // --- Event Handlers for main analysis forms ---
-    $('form.analysisForm').on('submit', function(event) {
-        console.log("Form analysisForm submitted.");
+    // Handler for simple forms (Ping, Traceroute, NSLookup)
+    $(document).on('submit', '.analysisForm', function(event) {
         event.preventDefault();
-        if (currentTask.taskId) {
-            alert(lang.task_already_running_wait_cancel);
-            return;
-        }
-        const form = $(this);
-        const button = form.find('button[type="submit"]');
-        const url = form.data('url');
-        let data = {};
-        form.serializeArray().forEach(item => { data[item.name] = item.value; });
-
-        if (form.attr('id') === 'nmapForm' && data.scan_type === 'custom_scan') {
-            data.custom_ports = $('#nmap-custom-ports').val();
-            data.custom_args = $('#nmap-custom-args').val();
-        }
-
-        if (form.hasClass('customAnalysisForm')) {
-            data['tool_id'] = form.data('tool-id');
-        }
-
-        const activeTabId = $('#netAnalysisTab .nav-link.active').attr('id');
-        let analysisMethod = $('#' + activeTabId).text().trim();
-        if (form.hasClass('customAnalysisForm')) {
-            analysisMethod = form.find('button[type="submit"]').text().replace('Run ', '').trim();
-        }
-        const analysisTarget = data.target || data.target_domain || data.victim_ip;
-
-        currentTask.submitButton = button;
-        currentTask.analysisTitle = "Net Analysis";
-        currentTask.analysisMethod = analysisMethod;
-        currentTask.analysisTarget = analysisTarget;
-
-        button.prop('disabled', true);
-        button.find('.spinner-border').show();
-        $('#analysis-in-progress').show();
-        $('#analysis-in-progress strong').text(lang.starting_task);
-        $('#output-display').hide();
-        $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
-        $('#task-controls').show();
-        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
+        const url = $(this).data('url');
+        const target = $(this).find('input[name="target"]').val();
         
-        console.log("Sending AJAX request to:", url, "with data:", data);
+        $('#ai-output').html('Running scan...');
         $.ajax({
             url: url,
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify(data),
+            data: JSON.stringify({ target: target }),
             success: function(response) {
-                console.log("AJAX success:", response);
-                if (response.task_id) {
-                    currentTask.taskId = response.task_id;
-                    currentTask.startTime = Date.now();
-                    currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, currentTask.analysisMethod, currentTask.analysisTarget), 2000);
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
                 } else {
-                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
-                    clearTaskState();
+                    runAiAnalysis(response.result);
                 }
             },
-            error: function(xhr, status, error) {
-                const errorMsg = `AJAX failed. Status: ${status}, Error: ${error}, Response: ${xhr.responseText}`;
-                console.error(errorMsg);
-                alert(errorMsg); // Show error in an alert
-                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${status} - ${error}</span>`).show();
-                clearTaskState();
+            error: function(xhr) {
+                $('#ai-output').html('<span class="text-danger">Failed to run scan: ' + xhr.responseText + '</span>');
             }
         });
     });
 
-    $('#cancel-button').on('click', cancelCurrentTask);
+    // Handler for Nmap form
+    $('#nmapForm').submit(function(event) {
+        event.preventDefault();
+        const target = $('#nmapTarget').val();
+        const scanType = $('input[name="scan_type"]:checked').val();
 
-    var hash = window.location.hash;
-    if (hash) {
-        $('#netAnalysisTab a[href="' + hash + '"]').tab('show');
-    }
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        window.location.hash = e.target.hash;
+        $('#ai-output').html('Running Nmap scan... This may take several minutes depending on the scan type.');
+        $.ajax({
+            url: '/run_nmap',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ target: target, scan_type: scanType }),
+            success: function(response) {
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
+                } else {
+                    runAiAnalysis(response.result);
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html('<span class="text-danger">Failed to run Nmap scan: ' + xhr.responseText + '</span>');
+            }
+        });
     });
 
-    $('input[name="scan_type"]').on('change', function() {
-        if ($(this).val() === 'custom_scan') {
-            $('#nmap-custom-options').slideDown();
-        } else {
-            $('#nmap-custom-options').slideUp();
-        }
+    // Handler for custom tool forms
+    $(document).on('submit', '.customAnalysisForm', function(event) {
+        event.preventDefault();
+        const form = $(this);
+        const toolId = form.data('tool-id');
+        const target = form.find('input[name="target"]').val();
+
+        $('#ai-output').html('Running custom scan...');
+        $.ajax({
+            url: '/run_custom_scan',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ tool_id: toolId, target: target }),
+            success: function(response) {
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
+                } else {
+                    let formattedResults = typeof response.result === 'string' ? response.result : JSON.stringify(response.result, null, 2);
+                    $('#ai-output').text(formattedResults);
+                    runAiAnalysis(formattedResults);
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html('<span class="text-danger">Failed to run custom scan: ' + xhr.responseText + '</span>');
+            }
+        });
+    });
+
+    // Handler for DNS Spoof form
+    $('#dnsSpoofForm').submit(function(event) {
+        event.preventDefault();
+        const victimIp = $('#victimIp').val();
+        const targetDomain = $('#targetDomain').val();
+        const fakeIp = $('#fakeIp').val();
+
+        $('#ai-output').html('Running DNS Spoof test... This will run for 30 seconds.');
+        $.ajax({
+            url: '/run_dns_spoof',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ victim_ip: victimIp, target_domain: targetDomain, fake_ip: fakeIp }),
+            success: function(response) {
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
+                } else {
+                    runAiAnalysis(response.result);
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html('<span class="text-danger">Failed to run DNS Spoof test: ' + xhr.responseText + '</span>');
+            }
+        });
     });
 });
 </script>
