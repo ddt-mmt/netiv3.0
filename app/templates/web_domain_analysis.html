@@ -1,476 +1,267 @@
 {% extends "main_navigation.html" %}
 
-{% block title %}{{ lang.web_domain_analysis_title }}{% endblock %}
+{% block title %}Web & Domain Analysis{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-globe"></i> {{ lang.web_domain_analysis_title }}</h3>
-        </div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
-                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}">
-            </div>
-            <hr>
+<div class="container">
+    <h1>Web & Domain Analysis</h1>
 
-            <!-- Bootstrap 4 Nav Tabs -->
-            <ul class="nav nav-tabs" id="webDomainAnalysisTab" role="tablist">
-                <li class="nav-item"><a class="nav-link active" id="nikto-tab" data-toggle="tab" href="#nikto" role="tab">{{ lang.nikto_scan_tab }}</a></li>
-                <li class="nav-item"><a class="nav-link" id="xxe-tab" data-toggle="tab" href="#xxe" role="tab">{{ lang.xxe_scan_tab }}</a></li>
-                <li class="nav-item"><a class="nav-link" id="subdomain-tab" data-toggle="tab" href="#subdomain" role="tab">{{ lang.subdomain_scan_tab }}</a></li>
-                <li class="nav-item"><a class="nav-link" id="dnszone-tab" data-toggle="tab" href="#dnszone" role="tab">{{ lang.dns_zone_transfer_tab }}</a></li>
-                <li class="nav-item"><a class="nav-link" id="nuclei-tab" data-toggle="tab" href="#nuclei" role="tab">Nuclei Scan</a></li>
-                {% for tool in web_tools %}
-                <li class="nav-item"><a class="nav-link" id="{{ tool.id }}-tab" data-toggle="tab" href="#{{ tool.id }}" role="tab">{{ tool.tab_name[lang_code] }}</a></li>
-                {% endfor %}
-                {% for tool in domain_tools %}
-                <li class="nav-item"><a class="nav-link" id="{{ tool.id }}-domain-tab" data-toggle="tab" href="#{{ tool.id }}-domain" role="tab">{{ tool.tab_name[lang_code] }}</a></li>
-                {% endfor %}
-            </ul>
-
-            <!-- Tab Content -->
-            <div class="tab-content pt-3" id="webDomainAnalysisTabContent">
-                <!-- Nikto Tab -->
-                <div class="tab-pane fade show active" id="nikto" role="tabpanel">
-                    <p>{{ lang.nikto_scan_description }}</p>
-                    <div class="alert alert-danger">{{ lang.nikto_scan_warning }}</div>
-                    <form class="analysisForm" data-url="/run_nikto_scan">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_url_label }}</label>
-                            <input type="text" class="form-control" name="target_url" placeholder="{{ lang.target_url_placeholder_nikto }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-danger w-100">
-                            {{ lang.run_nikto_scan_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <!-- XXE Tab -->
-                <div class="tab-pane fade" id="xxe" role="tabpanel">
-                    <p>{{ lang.xxe_scan_description }}</p>
-                    <div class="alert alert-danger">{{ lang.xxe_scan_warning }}</div>
-                    <form class="analysisForm" data-url="/run_xxe_scan">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_url_label }}</label>
-                            <input type="text" class="form-control" name="target_url" placeholder="{{ lang.target_url_placeholder_xxe }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-danger w-100">
-                            {{ lang.run_xxe_scan_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <!-- Subdomain Tab -->
-                <div class="tab-pane fade" id="subdomain" role="tabpanel">
-                    <p>{{ lang.subdomain_description }}</p>
-                    <div class="alert alert-info">{{ lang.subdomain_duration_warning | default('Note: Subdomain enumeration against a large domain can be a very time-consuming process.') }}</div>
-                    <form class="analysisForm" data-url="/scan">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_domain_label }}</label>
-                            <input type="text" class="form-control" name="target" placeholder="{{ lang.target_domain_placeholder }}" required>
-                            <input type="hidden" name="scan_type" value="subdomain_enum">
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            {{ lang.subdomain_scan_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <!-- DNS Zone Transfer Tab -->
-                <div class="tab-pane fade" id="dnszone" role="tabpanel">
-                    <p>{{ lang.dnszone_description }}</p>
-                    <div class="alert alert-warning">{{ lang.dns_zone_transfer_warning }}</div>
-                    <form class="analysisForm" data-url="/run_dns_zone_transfer">
-                        <div class="mb-3">
-                            <label class="form-label">{{ lang.target_domain_label }}</label>
-                            <input type="text" class="form-control" name="target_domain" placeholder="{{ lang.target_domain_placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-warning w-100">
-                            {{ lang.run_dns_zone_transfer_button }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <!-- Nuclei Tab -->
-                <div class="tab-pane fade" id="nuclei" role="tabpanel">
-                    <p>Perform a vulnerability scan using Nuclei. Select a target URL and the type of scan to run.</p>
-                    <form class="analysisForm" data-url="/web_domain_analysis/nuclei_scan">
-                        <div class="mb-3">
-                            <label for="nucleiTargetUrl" class="form-label">Target URL</label>
-                            <input type="text" class="form-control" id="nucleiTargetUrl" name="target_url" placeholder="e.g., https://example.com" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="nucleiScanType" class="form-label">Scan Type</label>
-                            <select class="form-select" id="nucleiScanType" name="scan_type">
-                                <option value="default">Default Scan (Common Vulnerabilities)</option>
-                                <option value="vulnerabilities">Vulnerabilities</option>
-                                <option value="misconfigurations">Misconfigurations</option>
-                                <option value="info">Information Disclosure</option>
-                                <option value="all">All Templates (Comprehensive)</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-danger w-100">
-                            Run Nuclei Scan
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                <!-- Custom Tools -->
-                {% for tool in web_tools %}
-                <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
-                    <h5>{{ tool.tab_name[lang_code] }}</h5>
-                    <p>{{ tool.description[lang_code] }}</p>
-                    {% if tool.warning %}<div class="alert alert-warning mt-2"><b>{{ lang.tool_warning_label }}</b> {{ tool.warning[lang_code] }}</div>{% endif %}
-                    <form class="customAnalysisForm analysisForm" data-url="/run_custom_scan" data-tool-id="{{ tool.id }}">
-                        <div class="mb-3"><label class="form-label">{{ tool.input_label[lang_code] }}:</label><input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required></div>
-                        <button type="submit" class="btn btn-info w-100">
-                            {{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                {% endfor %}
-                {% for tool in domain_tools %}
-                <div class="tab-pane fade" id="{{ tool.id }}-domain" role="tabpanel">
-                    <h5>{{ tool.tab_name[lang_code] }}</h5>
-                    <p>{{ tool.description[lang_code] }}</p>
-                    {% if tool.warning %}<div class="alert alert-warning"><b>{{ lang.tool_warning_label }}</b> {{ tool.warning[lang_code] }}</div>{% endif %}
-                    <form class="customAnalysisForm analysisForm" data-url="/run_custom_scan" data-tool-id="{{ tool.id }}">
-                        <div class="mb-3">
-                            <label class="form-label">{{ tool.input_label[lang_code] }}:</label>
-                            <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-info w-100">
-                            {{ lang.run_custom_tool_button }} {{ tool.tab_name[lang_code] }}
-                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                        </button>
-                    </form>
-                </div>
-                {% endfor %}
-            </div>
-    <div id="results-area" class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
-            <div id="task-controls" style="display: none;">
-                <span id="task-timer" class="me-3">00:00</span>
-                <button id="cancel-button" class="btn btn-danger btn-sm">
-                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
-                <div id="analysis-in-progress" style="display: none;">
-                    <div class="d-flex align-items-center">
-                        <strong>{{ lang.processing_message }}</strong>
-                    </div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
-                    </div>
-                </div>
-                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
-            </div>
-        </div>
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div id="ai-output-area">
-                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
-                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
-                </div>
-            </div>
-        </div>
+    <div class="form-group mt-4">
+        <label for="apiKey">AI Key:</label>
+        <input type="password" class="form-control" id="apiKey" placeholder="Masukkan AI Key Anda untuk analisis otomatis">
     </div>
+    <div class="form-group mt-2">
+        <label for="modelName">AI Model:</label>
+        <select class="form-control" id="modelName">
+            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+        </select>
+    </div>
+    <hr>
+    <p>Pilih alat analisis dari tab di bawah ini.</p>
+
+    <ul class="nav nav-tabs" id="webDomainAnalysisTab" role="tablist">
+        <!-- Web Analysis Tabs -->
+        <li class="nav-item">
+            <a class="nav-link active" id="nikto-tab" data-toggle="tab" href="#nikto" role="tab" aria-controls="nikto" aria-selected="true">Nikto Scan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="xxe-tab" data-toggle="tab" href="#xxe" role="tab" aria-controls="xxe" aria-selected="false">XXE Scan</a>
+        </li>
+        {% for tool in web_tools %}
+        <li class="nav-item">
+            <a class="nav-link" id="{{ tool.id }}-tab" data-toggle="tab" href="#{{ tool.id }}" role="role">{{ tool.tab_name[lang_code] }}</a>
+        </li>
+        {% endfor %}
+
+        <!-- Domain/Subdomain Tabs -->
+        <li class="nav-item">
+            <a class="nav-link" id="subdomain-tab" data-toggle="tab" href="#subdomain" role="tab">Subdomain Scan</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="dnszone-tab" data-toggle="tab" href="#dnszone" role="tab">DNS Zone Transfer</a>
+        </li>
+        {% for tool in domain_tools %}
+        <li class="nav-item">
+            <a class="nav-link" id="{{ tool.id }}-domain-tab" data-toggle="tab" href="#{{ tool.id }}-domain" role="role">{{ tool.tab_name[lang_code] }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content" id="webDomainAnalysisTabContent">
+        <!-- Nikto Tab Content -->
+        <div class="tab-pane fade show active" id="nikto" role="tabpanel" aria-labelledby="nikto-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">Lakukan pemindaian Nikto untuk menemukan kerentanan umum pada server web.</p>
+                <hr>
+                <form class="analysisForm" data-url="/run_nikto_scan">
+                    <div class="form-group">
+                        <label for="niktoTarget">Target URL:</label>
+                        <input type="text" class="form-control" name="target_url" placeholder="cth: https://example.com" required>
+                    </div>
+                    <div class="alert alert-danger mt-2" role="alert">
+                        ⚠️ **Peringatan:** Nikto adalah pemindai aktif yang sangat "berisik". Ini akan membuat ribuan permintaan ke server target dan sangat mungkin terdeteksi oleh sistem keamanan (IPS/WAF) dan berisiko tinggi untuk diblokir.
+                    </div>
+                    <button type="submit" class="btn btn-primary">Jalankan Nikto Scan</button>
+                </form>
+            </div>
         </div>
+        <!-- XXE Tab Content -->
+        <div class="tab-pane fade" id="xxe" role="tabpanel" aria-labelledby="xxe-tab">
+            <div class="card card-body mt-3">
+                <p class="card-text">Lakukan pemindaian XXE untuk mendeteksi kerentanan XML External Entity.</p>
+                <hr>
+                <form class="analysisForm" data-url="/run_xxe_scan">
+                    <div class="form-group">
+                        <label for="xxeTarget">Target URL:</label>
+                        <input type="text" class="form-control" name="target_url" placeholder="cth: https://example.com" required>
+                    </div>
+                    <div class="alert alert-danger mt-2" role="alert">
+                        ⚠️ **Peringatan:** Pemindaian ini mengirimkan payload yang berbahaya. Ini akan dicatat dan kemungkinan besar akan diblokir oleh Web Application Firewall (WAF).
+                    </div>
+                    <button type="submit" class="btn btn-primary">Jalankan XXE Scan</button>
+                </form>
+            </div>
+        </div>
+        {% for tool in web_tools %}
+        <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ tool.description[lang_code] }}</p>
+                {% if tool.warning %}
+                <div class="alert alert-warning mt-2" role="alert">
+                    ⚠️ **Peringatan:** {{ tool.warning[lang_code] }}
+                </div>
+                {% endif %}
+                <hr>
+                <form class="customAnalysisForm" data-tool-id="{{ tool.id }}">
+                    <div class="form-group">
+                        <label>{{ tool.input_label[lang_code] }}:</label>
+                        <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Run {{ tool.tab_name[lang_code] }}</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Subdomain Enumeration Tab Content -->
+        <div class="tab-pane fade" id="subdomain" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ lang.subdomain_description }}</p>
+                <hr>
+                <form class="analysisForm" data-url="/scan">
+                    <div class="form-group">
+                        <label>Target Domain:</label>
+                        <input type="text" class="form-control" name="target" placeholder="example.com" required>
+                        <input type="hidden" name="scan_type" value="subdomain_enum">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Run Subdomain Scan</button>
+                </form>
+            </div>
+        </div>
+        <!-- DNS Zone Transfer Tab Content -->
+        <div class="tab-pane fade" id="dnszone" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ lang.dnszone_description }}</p>
+                <hr>
+                <form class="analysisForm" data-url="/run_dns_zone_transfer">
+                    <div class="form-group">
+                        <label>Target Domain:</label>
+                        <input type="text" class="form-control" name="target_domain" placeholder="example.com" required>
+                    </div>
+                    <div class="alert alert-warning mt-2" role="alert">
+                        ⚠️ **Peringatan:** Ini adalah pemindaian aktif dan akan tercatat di log server target. Gunakan dengan izin.
+                    </div>
+                    <button type="submit" class="btn btn-primary">Run DNS Zone Transfer</button>
+                </form>
+            </div>
+        </div>
+        {% for tool in domain_tools %}
+        <div class="tab-pane fade" id="{{ tool.id }}-domain" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ tool.description[lang_code] }}</p>
+                {% if tool.warning %}
+                <div class="alert alert-warning mt-2" role="alert">
+                    ⚠️ **Peringatan:** {{ tool.warning[lang_code] }}
+                </div>
+                {% endif %}
+                <hr>
+                <form class="customAnalysisForm" data-tool-id="{{ tool.id }}">
+                    <div class="form-group">
+                        <label>{{ tool.input_label[lang_code] }}:</label>
+                        <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Run {{ tool.tab_name[lang_code] }}</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="aiAnalysisResult" class="mt-4">
+        <h3>Hasil Analisis</h3>
+        <pre id="ai-output" style="background-color: #f8f9fa; color: #333; padding: 1rem; border-radius: 6px; white-space: pre-wrap; border: 1px solid #dee2e6;"></pre>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const lang = {{ lang | tojson }};
 $(document).ready(function() {
-    // --- State Management ---
-    let currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-    let currentAiTask = { intervalId: null, taskId: null, startTime: null }; // New state for AI task
-
-    function clearTaskState() {
-        if (currentTask.intervalId) clearInterval(currentTask.intervalId);
-        if (currentTask.submitButton) {
-            const button = $(currentTask.submitButton);
-            button.prop('disabled', false).find('.button-text').show();
-            button.find('.spinner-border').hide();
-        }
-        $('#task-controls').hide();
-        currentTask = { intervalId: null, taskId: null, startTime: null, submitButton: null };
-        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
-    }
-
-    function clearAiTaskState() {
-        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
-        currentAiTask = { intervalId: null, taskId: null, startTime: null };
-        checkAndHideProgressBar(); // Check if both tasks are done before hiding progress bar
-    }
-
-    function checkAndHideProgressBar() {
-        if (!currentTask.taskId && !currentAiTask.taskId) {
-            $('#analysis-in-progress').hide();
-        }
-    }
-
-    function formatTime(seconds) {
-        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const sec = (seconds % 60).toString().padStart(2, '0');
-        return `${min}:${sec}`;
-    }
-
-    // --- API Communication ---
-    function pollTaskStatus(taskId, analysisTitle, analysisMethod, analysisTarget) {
-        const elapsedTime = Math.round((Date.now() - currentTask.startTime) / 1000);
-        $('#task-timer').text(formatTime(elapsedTime));
-        $('#analysis-in-progress strong').text(`${lang.scanning_message} (${formatTime(elapsedTime)})`);
-
-        $.ajax({
-            url: `/task/status/${taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.status === 'completed') {
-                    var resultText = response.result.stdout || "";
-                    // Raw scan data is no longer shown on the UI for successful scans.
-                    runAiAnalysis(resultText, analysisTitle, analysisMethod, analysisTarget);
-                    clearTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || (response.result && response.result.message) || lang.unknown_error_occurred;
-                    $('#output-display').html(`<span class="text-danger">Error: ${errorText}</span>`).show();
-                    clearTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#output-display').html(`<span class="text-warning">${lang.task_was_cancelled}</span>`).show();
-                    clearTaskState();
+            function runAiAnalysis(rawResults, apiKey, modelName) {
+                console.log('DEBUG: runAiAnalysis - rawResults:', rawResults);
+                console.log('DEBUG: runAiAnalysis - apiKey:', apiKey);
+                console.log('DEBUG: runAiAnalysis - modelName:', modelName);
+                if (!apiKey) {
+                    $('#ai-output').html('<span class="text-danger">Please enter your AI Key to run the analysis.</span>');
+                    return;
                 }
-            },
-            error: function(xhr) {
-                stopHackingAnimation();
-                $('#output-display').html(`<span class="text-danger">${lang.error_polling_status} ${xhr.responseText}</span>`).show();
-                clearTaskState();
-            }
-        });
-    }
-
-    function pollAiTaskStatus() {
-        if (!currentAiTask.taskId) return;
-
-        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
-        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
-        console.log(`Polling AI task ${currentAiTask.taskId}. Elapsed: ${formatTime(elapsedTime)}`);
-
+        $('#ai-output').html('Generating AI analysis... Please wait.');
         $.ajax({
-            url: `/task/status/${currentAiTask.taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.status === 'completed') {
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis.")));
-                    console.log("AI task completed.", response.result);
-                    clearAiTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
-                    $('#ai-output').html(`<span class="text-danger">Error AI: ${errorText}</span>`);
-                    console.error("AI task error.", response.result);
-                    clearAiTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
-                    console.warn("AI task cancelled.");
-                    clearAiTaskState();
-                }
-            },
-            error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status} ${xhr.responseText}</span>`);
-                console.error("Error polling AI status.", xhr);
-                clearAiTaskState();
-            }
-        });
-    }
-
-    function cancelCurrentTask() {
-        let tasksToCancel = [];
-        if (currentTask.taskId) tasksToCancel.push(currentTask.taskId);
-        if (currentAiTask.taskId) tasksToCancel.push(currentAiTask.taskId);
-
-        if (tasksToCancel.length > 0) {
-            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
-            $('#analysis-in-progress strong').text(lang.cancelling_message);
-
-            let cancelPromises = tasksToCancel.map(taskId => {
-                return $.ajax({
-                    url: `/task/cancel/${taskId}`,
-                    type: 'POST'
-                }).fail(function(xhr) {
-                    console.error(`Failed to send cancel request for task ${taskId}: ${xhr.responseText}`);
-                    // Optionally update a specific error message for this task
-                });
-            });
-
-            $.when(...cancelPromises).always(function() {
-                // Polling functions will eventually pick up the 'cancelled' status
-                // and clear their respective states. The checkAndHideProgressBar will then hide the progress bar.
-                // Re-enable button and reset text after all attempts
-                $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
-            });
-        } else {
-            alert(lang.no_running_tasks_to_cancel);
-        }
-    }
-
-    function runAiAnalysis(rawResults, analysisTitle, analysisMethod, analysisTarget) {
-        console.log("runAiAnalysis called.");
-        const apiKey = $('#apiKey').val();
-        console.log("DEBUG: API Key value read from input field: '" + apiKey + "'"); // Tambahan untuk Debug
-        if (!apiKey) {
-            $('#ai-output').html(`<span class="text-warning">${lang.ai_key_not_entered_ai_skipped}</span>`);
-            console.warn("AI Key is missing. Skipping AI analysis.");
-            return;
-        }
-        $('#ai-output').text(lang.starting_ai_analysis).show(); // Ensure AI output is visible and show initial message
-        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
-        $('#analysis-in-progress').show(); // Show progress bar for AI analysis
-        console.log("Starting AI analysis request.");
-
-        clearAiTaskState(); // Clear any previous AI task state
-
-        // Construct header and store it in currentAiTask
-        let header = `### ${analysisTitle || lang.ai_analysis_title}\n\n`;
-        header += `**Tanggal & Waktu:** ${new Date().toLocaleString()}\n`;
-        if (analysisMethod) header += `**Metode:** ${analysisMethod}\n`;
-        if (analysisTarget) header += `**Target:** ${analysisTarget}\n\n`;
-        header += `---\n\n`; // Separator
-        currentAiTask.header = header; // Store the constructed header
-
-        console.log("DEBUG: Preparing to make AJAX call to /analyze_results with key: '" + apiKey + "'"); // Tambahan untuk Debug
-        $.ajax({
-            url: '/analyze_results',
+            url: '/analyze_results', // Changed from /ai_analysis to /analyze_results as per routes.py
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ api_key: apiKey, results: rawResults, language: '{{ lang_code }}' }),
+            data: JSON.stringify({ 
+                api_key: apiKey, 
+                results: rawResults, 
+                language: {{ lang_code|tojson }},
+                model_name: modelName
+            }),
             success: function(response) {
-                console.log("AI analysis initial response:", response);
-                if (response.task_id) {
-                    currentAiTask.taskId = response.task_id;
-                    currentAiTask.startTime = Date.now();
-                    currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
-                    console.log(`AI task started with ID: ${response.task_id}`);
-                } else if (response.error) {
-                     $('#ai-output').html(`<span class="text-danger">Error: ${response.error}</span>`).show();
-                     checkAndHideProgressBar();
-                     console.error("Error starting AI task:", response.error);
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
                 } else {
-                    // Use the stored header
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "Tidak ada hasil analisis."))).show();
-                    checkAndHideProgressBar();
-                    console.warn("AI analysis response without task_id or error.", response);
+                    $('#ai-output').html(response.analysis);
                 }
             },
             error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis} ${xhr.responseText}</span>`).show();
-                checkAndHideProgressBar();
-                console.error("Failed to send AI analysis request.", xhr);
+                $('#ai-output').html('<span class="text-danger">Failed to fetch AI analysis: ' + xhr.responseText + '</span>');
             }
         });
     }
 
-    // --- Event Handlers for main analysis forms ---
-    $('form.analysisForm').on('submit', function(event) {
-        console.log("Form analysisForm submitted.");
+    // Generic handler for all analysis forms
+    $(document).on('submit', '.analysisForm', function(event) {
         event.preventDefault();
-        if (currentTask.taskId) {
-            alert(lang.task_already_running_wait_cancel);
-            return;
-        }
         const form = $(this);
-        const button = form.find('button[type="submit"]');
         const url = form.data('url');
-        let data = {};
-        form.serializeArray().forEach(item => { data[item.name] = item.value; });
+        const data = {};
+        form.serializeArray().forEach(item => {
+            data[item.name] = item.value;
+        });
+        const apiKey = $('#apiKey').val();
+        const modelName = $('#modelName').val();
 
-        // If it's the Nmap form and custom scan is selected, add custom fields
-        if (form.attr('id') === 'nmapForm' && data.scan_type === 'custom_scan') {
-            data.custom_ports = $('#nmap-custom-ports').val();
-            data.custom_args = $('#nmap-custom-args').val();
-        }
-
-        if (form.hasClass('customAnalysisForm')) {
-            data['tool_id'] = form.data('tool-id');
-        }
-
-        // Capture analysis details
-        const activeTabId = $('#webDomainAnalysisTab .nav-link.active').attr('id');
-        let analysisMethod = $('#' + activeTabId).text().trim();
-        if (form.hasClass('customAnalysisForm')) {
-            analysisMethod = form.find('button[type="submit"]').text().replace('Run ', '').trim();
-        }
-        const analysisTarget = data.target || data.target_url || data.target_domain; // Handle different target names
-
-        currentTask.submitButton = button;
-        currentTask.analysisTitle = "Web & Domain Analysis";
-        currentTask.analysisMethod = analysisMethod;
-        currentTask.analysisTarget = analysisTarget;
-
-        button.prop('disabled', true);
-        button.find('.spinner-border').show();
-        $('#analysis-in-progress').show(); // Show loading animation
-        $('#analysis-in-progress strong').text(lang.starting_task);
-        $('#output-display').hide(); // Hide raw output display
-        $('#ai-output').text(lang.waiting_for_scan_results_to_be_analyzed).show();
-        $('#task-controls').show(); // Show task controls immediately
-        $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel'); // Enable cancel button immediately
-        console.log("Main analysis form submitted.", data);
-
+        $('#ai-output').html('Running scan... This may take a moment.');
         $.ajax({
             url: url,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
-                console.log("Main task initial response:", response);
-                if (response.task_id) {
-                    currentTask.taskId = response.task_id;
-                    currentTask.startTime = Date.now();
-                    $('#task-controls').show();
-                    $('#cancel-button').prop('disabled', false).html('<i class="fas fa-times-circle"></i> Cancel');
-                    currentTask.intervalId = setInterval(() => pollTaskStatus(response.task_id, currentTask.analysisTitle, currentTask.analysisMethod, currentTask.analysisTarget), 2000);
-                    console.log(`Main task started with ID: ${response.task_id}`);
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
                 } else {
-                    $('#output-display').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_task}</span>`).show();
-                    console.error("Error starting main task:", response);
-                    clearTaskState();
+                    let formattedResults = typeof response.result === 'string' ? response.result : JSON.stringify(response.result, null, 2);
+                    $('#ai-output').text(formattedResults);
+                    runAiAnalysis(formattedResults, apiKey, modelName);
                 }
             },
             error: function(xhr) {
-                $('#output-display').html(`<span class="text-danger">${lang.failed_to_start_task_colon} ${xhr.responseText}</span>`).show();
-                console.error("Failed to send main task request.", xhr);
-                clearTaskState();
+                $('#ai-output').html('<span class="text-danger">Failed to run scan: ' + xhr.responseText + '</span>');
             }
         });
     });
 
-    $('#cancel-button').on('click', cancelCurrentTask);
+    // Handler for custom tool forms
+    $(document).on('submit', '.customAnalysisForm', function(event) {
+        event.preventDefault();
+        const form = $(this);
+        const toolId = form.data('tool-id');
+        const target = form.find('input[name="target"]').val();
+        const apiKey = $('#apiKey').val();
+        const modelName = $('#modelName').val();
 
-    // Bootstrap 4 tab activation
-    var hash = window.location.hash;
-    if (hash) {
-        $('#webDomainAnalysisTab a[href="' + hash + '"]').tab('show');
-    }
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        window.location.hash = e.target.hash;
-    });
-
-    // Nmap custom scan options visibility
-    $('input[name="scan_type"]').on('change', function() {
-        if ($(this).val() === 'custom_scan') {
-            $('#nmap-custom-options').slideDown();
-        } else {
-            $('#nmap-custom-options').slideUp();
-        }
+        $('#ai-output').html('Running custom scan...');
+        $.ajax({
+            url: '/run_custom_scan',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ tool_id: toolId, target: target }),
+            success: function(response) {
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
+                } else {
+                    let formattedResults = typeof response.result === 'string' ? response.result : JSON.stringify(response.result, null, 2);
+                    $('#ai-output').text(formattedResults);
+                    runAiAnalysis(formattedResults, apiKey, modelName);
+                }
+            },
+            error: function(xhr) {
+                $('#ai-output').html('<span class="text-danger">Failed to run custom scan: ' + xhr.responseText + '</span>');
+            }
+        });
     });
 });
 </script>

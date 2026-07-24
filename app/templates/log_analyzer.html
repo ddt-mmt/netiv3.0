@@ -1,199 +1,152 @@
 {% extends "main_navigation.html" %}
 
-{% block title %}{{ lang.log_analyzer_title }}{% endblock %}
+{% block title %}Log Analyzer{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-file-medical-alt"></i> {{ lang.log_analyzer_title }}</h3>
-        </div>
-        <div class="card-body">
-            <p class="lead">{{ lang.log_analyzer_description }}</p>
-            <div class="mb-3">
-                <label for="apiKey" class="form-label">{{ lang.ai_key_label }}</label>
-                <input type="password" class="form-control" id="apiKey" placeholder="{{ lang.ai_key_placeholder_auto_analysis }}" required>
-            </div>
-            <hr>
+<div class="container">
+    <h1>Log Analyzer</h1>
 
-            <form id="log-analysis-form">
-                <div class="mb-3">
-                    <label for="log-content" class="form-label">{{ lang.paste_log_data_label }}</label>
-                    <textarea class="form-control" id="log-content" rows="15" placeholder="{{ lang.paste_log_data_placeholder }}" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">
-                    {{ lang.analyze_log_button }}
-                    <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
-                </button>
-            </form>
+    <div class="form-group mt-4">
+        <label for="apiKey">AI Key:</label>
+        <input type="password" class="form-control" id="apiKey" placeholder="Masukkan AI Key Anda untuk analisis otomatis">
+    </div>
+    <div class="form-group mt-2">
+        <label for="modelName">AI Model:</label>
+        <select class="form-control" id="modelName">
+            <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash-latest" selected>Gemini 1.5 Flash</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+        </select>
+    </div>
+    <hr>
+    <p>Pilih alat analisis dari tab di bawah ini.</p>
+
+    <ul class="nav nav-tabs" id="logAnalysisTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="paste-log-tab" data-toggle="tab" href="#paste-log" role="tab">Paste Log</a>
+        </li>
+        {% for tool in custom_tools %}
+        <li class="nav-item">
+            <a class="nav-link" id="{{ tool.id }}-tab" data-toggle="tab" href="#{{ tool.id }}" role="tab">{{ tool.tab_name[lang_code] }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content" id="logAnalysisTabContent">
+        <!-- Paste Log Tab -->
+        <div class="tab-pane fade show active" id="paste-log" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">Paste raw log data into the textbox below to have it analyzed by the AI for anomalies, errors, and security events.</p>
+                <hr>
+                <form id="pasteLogForm">
+                    <div class="form-group">
+                        <label for="log_data">Log Data:</label>
+                        <textarea class="form-control" id="log_data" rows="15" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Analyze Pasted Log</button>
+                </form>
+            </div>
         </div>
+
+        <!-- Custom Tools Panes -->
+        {% for tool in custom_tools %}
+        <div class="tab-pane fade" id="{{ tool.id }}" role="tabpanel">
+            <div class="card card-body mt-3">
+                <p class="card-text">{{ tool.description[lang_code] }}</p>
+                <hr>
+                <form class="customAnalysisForm" data-tool-id="{{ tool.id }}">
+                    <div class="form-group">
+                        <label>{{ tool.input_label[lang_code] }}:</label>
+                        <input type="text" class="form-control" name="target" placeholder="{{ tool.placeholder }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Run {{ tool.tab_name[lang_code] }}</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
-    <!-- Results Area -->
-    <div id="results-area" class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="mb-0">{{ lang.analysis_results_title }}</h4>
-            <div id="task-controls" style="display: none;">
-                <span id="task-timer" class="me-3">00:00</span>
-                <button id="cancel-button" class="btn btn-danger btn-sm">
-                    <i class="fas fa-times-circle"></i> {{ lang.cancel_button }}
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h5><i class="fas fa-file-alt"></i> {{ lang.raw_scan_data_title }}</h5>
-                <div id="analysis-in-progress" style="display: none;">
-                    <div class="d-flex align-items-center">
-                        <strong>{{ lang.processing_message }}</strong>
-                    </div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
-                    </div>
-                </div>
-                <pre id="output-display">{{ lang.results_will_be_displayed_here }}</pre>
-            </div>
-        </div>
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div id="ai-output-area">
-                    <h5><i class="fas fa-robot"></i> {{ lang.ai_analysis_title }}</h5>
-                    <pre id="ai-output">{{ lang.waiting_for_scan_results_ai }}</pre>
-                </div>
-            </div>
-        </div>
+    <div id="aiAnalysisResult" class="mt-4">
+        <h3>Hasil Analisis</h3>
+        <pre id="ai-output" style="background-color: #f8f9fa; color: #333; padding: 1rem; border-radius: 6px; white-space: pre-wrap; border: 1px solid #dee2e6;"></pre>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const lang = {{ lang | tojson }};
 $(document).ready(function() {
-    // Since log analysis is purely an AI task, we only need the AI task state.
-    let currentAiTask = { intervalId: null, taskId: null, startTime: null, header: '' };
+    function runAiAnalysis(rawResults) {
+        const apiKey = $('#apiKey').val();
+        const modelName = $('#modelName').val();
+        if (!apiKey) {
+            $('#ai-output').html('<span class="text-danger">Please enter your AI Key to run the analysis.</span>');
+            return;
+        }
 
-    function clearAiTaskState() {
-        if (currentAiTask.intervalId) clearInterval(currentAiTask.intervalId);
-        const button = $('#log-analysis-form button[type="submit"]');
-        button.prop('disabled', false);
-        button.find('.spinner-border').hide();
-        $('#task-controls').hide();
-        $('#analysis-in-progress').hide();
-        currentAiTask = { intervalId: null, taskId: null, startTime: null, header: '' };
-    }
-
-    function formatTime(seconds) {
-        const min = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const sec = (seconds % 60).toString().padStart(2, '0');
-        return `${min}:${sec}`;
-    }
-
-    function pollAiTaskStatus() {
-        if (!currentAiTask.taskId) return;
-
-        const elapsedTime = Math.round((Date.now() - currentAiTask.startTime) / 1000);
-        $('#task-timer').text(formatTime(elapsedTime));
-        $('#analysis-in-progress strong').text(`${lang.ai_analysis_in_progress} (${formatTime(elapsedTime)})`);
-
+        $('#ai-output').html('Generating AI analysis... Please wait.');
         $.ajax({
-            url: `/task/status/${currentAiTask.taskId}`,
-            type: 'GET',
+            url: '/analyze_results',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 
+                api_key: apiKey, 
+                results: rawResults, 
+                language: {{ lang_code|tojson }},
+                model_name: modelName
+            }),
             success: function(response) {
-                if (response.status === 'completed') {
-                    $('#ai-output').html(marked.parse(currentAiTask.header + (response.result.analysis || "No analysis result."))).show();
-                    clearAiTaskState();
-                } else if (response.status === 'error') {
-                    const errorText = response.result.stderr || response.result.message || lang.error_ai_unknown;
-                    $('#ai-output').html(`<span class="text-danger">AI Error: ${errorText}</span>`);
-                    clearAiTaskState();
-                } else if (response.status === 'cancelled') {
-                    $('#ai-output').html(`<span class="text-warning">${lang.ai_analysis_cancelled}</span>`);
-                    clearAiTaskState();
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
+                } else {
+                    $('#ai-output').html(response.analysis);
                 }
             },
             error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.error_polling_ai_status}: ${xhr.responseText}</span>`);
-                clearAiTaskState();
+                $('#ai-output').html('<span class="text-danger">Failed to fetch AI analysis: ' + xhr.responseText + '</span>');
             }
         });
     }
 
-    function cancelCurrentTask() {
-        if (currentAiTask.taskId) {
-            $('#cancel-button').prop('disabled', true).text(lang.cancelling_message);
-            $.ajax({
-                url: `/task/cancel/${currentAiTask.taskId}`,
-                type: 'POST',
-                error: function(xhr) {
-                    $('#ai-output').append(`\n<span class="text-danger">${lang.failed_to_send_cancel_request}</span>`);
-                    $('#cancel-button').prop('disabled', false).text(lang.cancel_button);
-                }
-            });
-        }
-    }
-
-    $('#log-analysis-form').on('submit', function(event) {
+    // Handler for the main paste form
+    $('#pasteLogForm').submit(function(event) {
         event.preventDefault();
-        if (currentAiTask.taskId) {
-            alert(lang.task_already_running_wait_cancel);
+        const logData = $('#log_data').val();
+        if (!logData) {
+            alert('Please paste some log data.');
             return;
         }
+        $('#ai-output').text("Raw log data submitted. Starting analysis...");
+        runAiAnalysis(logData);
+    });
 
-        const apiKey = $('#apiKey').val();
-        const logContent = $('#log-content').val();
+    // Handler for custom tool forms
+    $(document).on('submit', '.customAnalysisForm', function(event) {
+        event.preventDefault();
+        const form = $(this);
+        const toolId = form.data('tool-id');
+        const target = form.find('input[name="target"]').val();
 
-        if (!apiKey || !logContent) {
-            alert(lang.api_key_and_log_content_required);
-            return;
-        }
-
-        const button = $(this).find('button[type="submit"]');
-        button.prop('disabled', true);
-        button.find('.spinner-border').show();
-
-        $('#results-area').show();
-        $('#analysis-in-progress').show();
-        $('#analysis-in-progress strong').text(lang.starting_ai_analysis);
-        $('#task-controls').show();
-        $('#cancel-button').prop('disabled', false).text(lang.cancel_button);
-        $('#output-display').text(logContent).show();
-        $('#ai-output').text(lang.starting_ai_analysis);
-
-        let header = `### {{ lang.log_analyzer_title }}\n\n`;
-        header += `**Date & Time:** ${new Date().toLocaleString()}\n`;
-        header += `**Log Snippet:** ${logContent.substring(0, 100)}...\n\n`;
-        header += `---\n\n`;
-        currentAiTask.header = header;
-
+        $('#ai-output').html('Running custom scan...');
         $.ajax({
-            url: '/analyze_logs',
+            url: '/run_custom_scan',
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({
-                api_key: apiKey, 
-                log_content: logContent, 
-                language: '{{ lang_code }}'
-            }),
+            data: JSON.stringify({ tool_id: toolId, target: target }),
             success: function(response) {
-                if (response.task_id) {
-                    currentAiTask.taskId = response.task_id;
-                    currentAiTask.startTime = Date.now();
-                    pollAiTaskStatus(); // Initial call
-                    currentAiTask.intervalId = setInterval(pollAiTaskStatus, 2000);
+                if (response.error) {
+                    $('#ai-output').html('<span class="text-danger">Error: ' + response.error + '</span>');
                 } else {
-                    $('#ai-output').html(`<span class="text-danger">Error: ${response.error || lang.failed_to_start_ai_analysis}</span>`);
-                    clearAiTaskState();
+                    let formattedResults = typeof response.result === 'string' ? response.result : JSON.stringify(response.result, null, 2);
+                    $('#ai-output').text(formattedResults);
+                    runAiAnalysis(formattedResults);
                 }
             },
             error: function(xhr) {
-                $('#ai-output').html(`<span class="text-danger">${lang.failed_to_start_ai_analysis}: ${xhr.responseText}</span>`);
-                clearAiTaskState();
+                $('#ai-output').html('<span class="text-danger">Failed to run custom scan: ' + xhr.responseText + '</span>');
             }
         });
     });
-
-    $('#cancel-button').on('click', cancelCurrentTask);
 });
 </script>
 {% endblock %}

@@ -3,7 +3,6 @@ from config import Config
 
 def create_app(config_class=Config):
     app = Flask(__name__)
-    print("--- create_app() called ---")
     app.config.from_object(config_class)
 
     # Load custom tools
@@ -20,8 +19,7 @@ def create_app(config_class=Config):
     except (FileNotFoundError, json.JSONDecodeError):
         app.config['CUSTOM_TOOLS'] = []
 
-    from app.routes import web_bp, bp
-    app.register_blueprint(web_bp)
-    app.register_blueprint(bp)
+    from app.routes import bp as main_bp
+    app.register_blueprint(main_bp)
 
     return app
